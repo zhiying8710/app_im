@@ -8,13 +8,13 @@ netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json �
 
 <h2>配置说明<h2>
 
-# redis
+<h4>redis</h4>
 redis.host=127.0.0.1  // redis的 ip
 redis.port=6379 // redis 端口
 redis.df_db=0 // redis 默认 db
 redis.timeout=10 // redis 连接超时时间
 
-# im
+<h4>im</h4>
 im.host=0.0.0.0  // 服务器绑定的 ip
 im.port=9000 // 服务器绑定的端口
 im.all.idle.secs=15 // socket 的读写全部空闲的时间上限, 单位秒, 超时客户端将下线
