@@ -152,6 +152,10 @@ public class UnAckRespMsgFixIntervalTimingWheel {
     }
 
     public void start() {
+        if (this.unAckRespMsgService == null) {
+            throw new IllegalStateException("unAckRespMsgService can not be null.");
+        }
+
         if (shutdown.get()) {
             throw new IllegalStateException("Cannot be started once stopped");
         }
