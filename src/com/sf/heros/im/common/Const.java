@@ -23,7 +23,7 @@ public class Const {
     public interface ReqAckMsgConst {
 
         public static final String DATA_SRC_FROM_USERID = "src_from";
-        public static final String DATA_MIME_USERID = "me";
+        public static final String DATA_SRC_TO_USERID = "src_to";
         public static final String DATA_SRC_FROM_TIME = "src_time";
         public static final String DATA_SRC_TYPE = "src_type";
 
@@ -49,8 +49,8 @@ public class Const {
 
     public interface RespAckMsgConst {
 
-        public static final String DATA_SRC_TO_USERID = "to_from";
-        public static final String DATA_MIME_USERID = "me";
+        public static final String DATA_SRC_TO_USERID = "src_to";
+        public static final String DATA_SRC_FROM_USERID = "src_from";
         public static final String DATA_SRC_FROM_TIME = "src_time";
         public static final String DATA_KEY_REMARK = "remark";
         public static final String DATA_SRC_TYPE = "src_type";
@@ -91,7 +91,7 @@ public class Const {
         public static final String SERVER_TYPE = "im.server.type";
         public static final String SERVER_TYPE_DEAFULT = "tcp";
         public static final String SERVER_TYPE_UDT = "udt";
-        public static final String UDT_WORKER_GROUP_THREADS = "im.server.udt.worker.threads";
+        public static final String WORKER_GROUP_THREADS = "im.server.udt.worker.threads";
         public static final String SERVER_SOCKET_BACKLOG_COUNT = "im.server.socket.backlog.count";
     }
 

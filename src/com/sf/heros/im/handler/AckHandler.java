@@ -49,7 +49,7 @@ public class AckHandler extends CommonInboundHandler {
             case Const.ReqMsgConst.TYPE_VOICE_MSG:
                 RespMsg ackMsg = new RespMsg(Const.RespMsgConst.TYPE_ACK);
                 ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_TIME, reqMsg.getTime());
-                ackMsg.setToData(Const.RespAckMsgConst.DATA_MIME_USERID, reqMsg.getUserId());
+                ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_USERID, reqMsg.getUserId());
                 ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null"));
                 ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
                 ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), ackMsg));

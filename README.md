@@ -1,1 +1,50 @@
-netty 实现的 tcp/udt 协议的聊天/推送服务器端.
+netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json 格式.<br/>
+
+1. 默认使用 redis 作为session 及消息的存储介质.<br/>
+
+2. 客户端建立起链接后, 不需要主动发起心跳, 服务器会在必要的时候发起要求客户端发生心跳消息的请求, 此时客户端才发送心跳消息.<br/>
+
+3. 客户端与服务器端收到消息后都需要向对方发送回执, 未收到回执则在一定时间内进行重发.
+
+<h2>配置说明<h2>
+
+# redis
+redis.host=127.0.0.1  // redis的 ip
+redis.port=6379 // redis 端口
+redis.df_db=0 // redis 默认 db
+redis.timeout=10 // redis 连接超时时间
+
+# im
+im.host=0.0.0.0  // 服务器绑定的 ip
+im.port=9000 // 服务器绑定的端口
+im.all.idle.secs=15 // socket 的读写全部空闲的时间上限, 单位秒, 超时客户端将下线
+im.read.idle.secs=10 // socket 的读空闲时间上限, 单位秒, 超时并且 session 的 overtime 超时时客户端将下线.
+im.write.idle.secs=5 // socket 的写空闲时间上限, 单位秒, 超时时向客户端发送要求客户端发送心跳消息的请求消息.
+im.re.send.un.ack.pool.size=5 // 处理未收到回执的消息的线程池大小
+im.un.ack.resp.msg.wheel.duration.secs=3 // 处理未收到回执的消息的定时轮的一轮时间, 单位秒, 该参数即为消息的回执接收的超时时间, 超时将重发.
+im.un.ack.resp.msg.wheel.per.slot.secs=1 // 处理未收到回执的消息的定时轮的一个槽的时间, 单位秒
+im.un.ack.resp.msg.wheel.name=un_ack_msg_wheel // 处理未收到回执的消息的定时轮的名称
+im.auth.check.so.illegal=false // 是否检测 socket 连接建立之前已通过 http 接口获取 token, 测试时设为 false, 生成应为 true
+im.server.type=udt // 服务器采用的协议类型, 可以为 tcp 或 udt
+im.server.worker.threads=1000 // 工作线程数
+im.server.socket.backlog.count=1000 // backlog 数
+<br/>
+
+<h2>消息类型</h2>
+0 ---> 服务器端接收, ping/心跳消息, 格式为 {"type" : 0, "time" : "1470000000", "userId" : "10001", "token" : "0000"}
+
+1 ---> 文本聊天消息, 服务器端收到的格式为 {"type" : 1, "time" : "1470000000", "userId" : "10001", "token" : "0000", "data" : {"from" : "10001", "to" : "10000", "content" : "ahahah"}}, 客户端收到的格式为 {"type" : 1, "time" : "1470000000", "data" : {"from" : "10001", "to" : "10000", "content" : "ahahah", "from_info" : {"nickname" : "1111", "head" : "...."}}}
+
+2 ---> 语音聊天消息, 服务器端接收到得格式为 {"type" : 2, "time" : "1470000000", "userId" : "10001", "token" : "0000", "data" : {"me" : "10001", "to" : "10000", "content" : "xxx/xxx/xxx.mp3"}},  客户端先将语音上传到某个服务器, 得到语音的 url 发送给服务器. 客户端接收到得格式为{"type" : 2, "time" : "1470000000",  "data" : {"me" : "10001", "to" : "10000", "content" : "xxx/xxx/xxx.mp3", "from_info" : {"nickname" : "1111", "head" : "...."}}}
+
+4 ---> 服务器端接收, 客户端下线消息, 格式为 {"type" : 4, "time" : "1470000000", "userId" : "10001", "token" : "0000"}
+
+5 ---> 回执消息, 格式为 {"type" : 5, "time" : "1470000000", "data" : {"src_time" : "1470000000", "src_to" : "10000", "src_from" : "10001", "src_type" : "1"}}, 对于客户端发送回执来说, src_from 为消息的发送者 id, src_to 为自己即客户端的 id, 服务器端发送是则是 src_from 为消息发送者即客户端的 id, src_to 为消息接收者的 id
+
+6 ---> 客户端接收, 客户端被踢下线, 格式为 {"type" : 6, "time" : "1470000000"}
+
+8 ---> 客户端接收, 服务器端会在超过im.write.idle.secs参数值的秒数后向客户端发送要求客户端发送心跳消息的请求. 格式为 {"type" : 8, "time" : "1470000000"}
+
+9 ---> 客户端接收, 服务器出错, 格式为 {"type" : 9, "time" : "1470000000"}
+
+10 ---> 客户端接收, 离线消息, 格式为 {"type" : 10, "time" : "1470000000", "data" : { "offline_msgs" : [...(type 为1或2的消息)], "from" : "server_1470000000", "to" : "10000"}, 客户端登陆是发送.

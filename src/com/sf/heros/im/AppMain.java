@@ -65,13 +65,13 @@ public class AppMain {
         ServerBootstrap server = new ServerBootstrap();
         logger.info("create ServerBootstrap.");
         if (servType.equals(Const.PropsConst.SERVER_TYPE_DEAFULT)) {
-            bossGroup = new NioEventLoopGroup();
-            workerGroup = new NioEventLoopGroup();
+            bossGroup = new NioEventLoopGroup(1);
+            workerGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.WORKER_GROUP_THREADS, 100));
             server.channel(TcpServerSocketChannel.class).childOption(ChannelOption.SO_KEEPALIVE, true);
         } else if (servType.equals(Const.PropsConst.SERVER_TYPE_UDT)) {
             bossGroup = new NioEventLoopGroup(1,
                     Executors.defaultThreadFactory(), NioUdtProvider.BYTE_PROVIDER);
-            workerGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.UDT_WORKER_GROUP_THREADS, 100),
+            workerGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.WORKER_GROUP_THREADS, 100),
                     Executors.defaultThreadFactory(), NioUdtProvider.BYTE_PROVIDER);
             server.channel(UdtServerSocketChannel.class);
         } else {

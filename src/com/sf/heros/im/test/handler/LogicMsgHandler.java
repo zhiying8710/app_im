@@ -71,7 +71,7 @@ public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
             break;
         case Const.RespMsgConst.TYPE_ACK:
             System.err.println("got ack for " + respMsg);
-            String me = respMsg.getFromData(Const.RespAckMsgConst.DATA_MIME_USERID, "null").toString();
+            String me = respMsg.getFromData(Const.RespAckMsgConst.DATA_SRC_FROM_USERID, "null").toString();
             String to = null;
             try {
                 to = respMsg.getFromData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, "null").toString();
@@ -84,7 +84,7 @@ public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
             System.out.println(me + "_" + to + "_" + time + "_" + srcType + " is acked.");
             break;
         case Const.RespMsgConst.TYPE_MSG_HANDLER_ERROR:
-            me = respMsg.getFromData(Const.RespAckMsgConst.DATA_MIME_USERID, "null").toString();
+            me = respMsg.getFromData(Const.RespAckMsgConst.DATA_SRC_FROM_USERID, "null").toString();
             try {
                 to = respMsg.getFromData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, "null").toString();
             } catch (Exception e) {
@@ -116,7 +116,7 @@ public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
             System.err.println("got " + type + " msg " + respMsg);
             ReqMsg ackReqMsg = new ReqMsg(userId, token);
             ackReqMsg.setType(Const.ReqMsgConst.TYPE_ACK);
-            ackReqMsg.setToData(Const.ReqAckMsgConst.DATA_MIME_USERID, userId);
+            ackReqMsg.setToData(Const.ReqAckMsgConst.DATA_SRC_TO_USERID, userId);
             ackReqMsg.setToData(Const.ReqAckMsgConst.DATA_SRC_FROM_TIME, respMsg.getTime());
             ackReqMsg.setToData(Const.ReqAckMsgConst.DATA_SRC_FROM_USERID, respMsg.getFromData(Const.RespMsgConst.DATA_KEY_FROM_USER_ID));
             ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), ackReqMsg));

@@ -133,13 +133,13 @@ public class LogicMsgHandler extends CommonInboundHandler {
                 }
             } catch (Exception e) {
                 logger.error("handle msg error, " + msg, e);
-                RespMsg errAckMsg = new RespMsg(Const.RespMsgConst.TYPE_MSG_HANDLER_ERROR);
-                errAckMsg.setToData(Const.RespAckMsgConst.DATA_KEY_REMARK, "reason: " + e.getMessage());
-                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_TIME, reqMsg.getTime());
-                errAckMsg.setToData(Const.RespAckMsgConst.DATA_MIME_USERID, reqMsg.getUserId());
-                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null"));
-                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
-                ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), errAckMsg));
+//                RespMsg errAckMsg = new RespMsg(Const.RespMsgConst.TYPE_MSG_HANDLER_ERROR);
+//                errAckMsg.setToData(Const.RespAckMsgConst.DATA_KEY_REMARK, "reason: " + e.getMessage());
+//                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_TIME, reqMsg.getTime());
+//                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_USERID, reqMsg.getUserId());
+//                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null"));
+//                errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
+//                ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), errAckMsg));
             } finally {
                 if (reqMsg != null) {
                     ReferenceCountUtil.release(reqMsg);

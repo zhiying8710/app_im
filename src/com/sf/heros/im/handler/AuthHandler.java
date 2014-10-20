@@ -129,7 +129,6 @@ public class AuthHandler extends CommonInboundHandler {
                 }
                 Session kickSession = sessionService.kick(kSessionId);
 
-
                 userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
                 if (kickSession != null) {
                     Channel kickChannel = kickSession.getChannel();
@@ -141,14 +140,14 @@ public class AuthHandler extends CommonInboundHandler {
             ctx.fireChannelRead(msg);
         } catch (Exception e) {
             logger.error("check user auth error.", e);
-            RespMsg errAckMsg = new RespMsg(Const.RespMsgConst.TYPE_MSG_HANDLER_ERROR);
-            errAckMsg.setToData(Const.RespAckMsgConst.DATA_KEY_REMARK, "reason: " + e.getMessage());
-            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_TIME, reqMsg.getTime());
-            errAckMsg.setToData(Const.RespAckMsgConst.DATA_MIME_USERID, reqMsg.getUserId());
-            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null"));
-            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
-            ChannelFuture errFuture = ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), errAckMsg));
-            errFuture.channel().closeFuture();
+//            RespMsg errAckMsg = new RespMsg(Const.RespMsgConst.TYPE_MSG_HANDLER_ERROR);
+//            errAckMsg.setToData(Const.RespAckMsgConst.DATA_KEY_REMARK, "reason: " + e.getMessage());
+//            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_TIME, reqMsg.getTime());
+//            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_USERID, reqMsg.getUserId());
+//            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null"));
+//            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
+//            ChannelFuture errFuture = ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), errAckMsg));
+//            errFuture.channel().closeFuture();
             ReferenceCountUtil.release(reqMsg);
             ReferenceCountUtil.release(msg);
         } finally {

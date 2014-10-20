@@ -14,7 +14,7 @@ public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
 
     protected String getUnAckMsgIdFromAck(ReqMsg ackMsg) {
 
-        return ackMsg.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_USERID, "null") + Const.CommonConst.KEY_SEP + ackMsg.getFromData(Const.ReqAckMsgConst.DATA_MIME_USERID, "null") + Const.CommonConst.KEY_SEP + ackMsg.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_TIME,"0");
+        return ackMsg.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_USERID, "null") + Const.CommonConst.KEY_SEP + ackMsg.getFromData(Const.ReqAckMsgConst.DATA_SRC_TO_USERID, "null") + Const.CommonConst.KEY_SEP + ackMsg.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_TIME,"0");
 
     }
 
