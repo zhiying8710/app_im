@@ -9,25 +9,25 @@ netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json �
 <h2>配置说明<h2>
 
 <h4>redis</h4>
-redis.host=127.0.0.1  // redis的 ip
-redis.port=6379 // redis 端口
-redis.df_db=0 // redis 默认 db
-redis.timeout=10 // redis 连接超时时间
+<p>redis.host=127.0.0.1  // redis的 ip</p>
+<p>redis.port=6379 // redis 端口</p>
+<p>redis.df_db=0 // redis 默认 db</p>
+<p>redis.timeout=10 // redis 连接超时时间</p>
 
 <h4>im</h4>
-im.host=0.0.0.0  // 服务器绑定的 ip
-im.port=9000 // 服务器绑定的端口
-im.all.idle.secs=15 // socket 的读写全部空闲的时间上限, 单位秒, 超时客户端将下线
-im.read.idle.secs=10 // socket 的读空闲时间上限, 单位秒, 超时并且 session 的 overtime 超时时客户端将下线.
-im.write.idle.secs=5 // socket 的写空闲时间上限, 单位秒, 超时时向客户端发送要求客户端发送心跳消息的请求消息.
-im.re.send.un.ack.pool.size=5 // 处理未收到回执的消息的线程池大小
-im.un.ack.resp.msg.wheel.duration.secs=3 // 处理未收到回执的消息的定时轮的一轮时间, 单位秒, 该参数即为消息的回执接收的超时时间, 超时将重发.
-im.un.ack.resp.msg.wheel.per.slot.secs=1 // 处理未收到回执的消息的定时轮的一个槽的时间, 单位秒
-im.un.ack.resp.msg.wheel.name=un_ack_msg_wheel // 处理未收到回执的消息的定时轮的名称
-im.auth.check.so.illegal=false // 是否检测 socket 连接建立之前已通过 http 接口获取 token, 测试时设为 false, 生成应为 true
-im.server.type=udt // 服务器采用的协议类型, 可以为 tcp 或 udt
-im.server.worker.threads=1000 // 工作线程数
-im.server.socket.backlog.count=1000 // backlog 数
+<p>im.host=0.0.0.0  // 服务器绑定的 ip</p>
+<p>im.port=9000 // 服务器绑定的端口</p>
+<p>im.all.idle.secs=15 // socket 的读写全部空闲的时间上限, 单位秒, 超时客户端将下线</p>
+<p>im.read.idle.secs=10 // socket 的读空闲时间上限, 单位秒, 超时并且 session 的 overtime 超时时客户端将下线.</p>
+<p>im.write.idle.secs=5 // socket 的写空闲时间上限, 单位秒, 超时时向客户端发送要求客户端发送心跳消息的请求消息.</p>
+<p>im.re.send.un.ack.pool.size=5 // 处理未收到回执的消息的线程池大小</p>
+<p>im.un.ack.resp.msg.wheel.duration.secs=3 // 处理未收到回执的消息的定时轮的一轮时间, 单位秒, 该参数即为消息的回执接收的超时时间, 超时将重发.</p>
+<p>im.un.ack.resp.msg.wheel.per.slot.secs=1 // 处理未收到回执的消息的定时轮的一个槽的时间, 单位秒</p>
+<p>im.un.ack.resp.msg.wheel.name=un_ack_msg_wheel // 处理未收到回执的消息的定时轮的名称</p>
+<p>im.auth.check.so.illegal=false // 是否检测 socket 连接建立之前已通过 http 接口获取 token, 测试时设为 false, 生成应为 true</p>
+<p>im.server.type=udt // 服务器采用的协议类型, 可以为 tcp 或 udt</p>
+<p>im.server.worker.threads=1000 // 工作线程数</p>
+<p>im.server.socket.backlog.count=1000 // backlog 数</p>
 <br/>
 
 <h2>消息类型</h2>
