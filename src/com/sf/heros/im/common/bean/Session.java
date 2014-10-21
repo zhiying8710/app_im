@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.PropsLoader;
-import com.sf.heros.im.common.Const.PropsConst;
 
 public class Session {
 
