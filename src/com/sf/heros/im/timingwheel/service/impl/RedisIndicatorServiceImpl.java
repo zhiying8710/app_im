@@ -19,7 +19,7 @@ public class RedisIndicatorServiceImpl implements IndicatorService {
     public Integer get(String e) {
         String slotIdx = null;
         try {
-            slotIdx = rm.hget(true, INDICATOR_KEY, e);
+            slotIdx = rm.hget(INDICATOR_KEY, e);
         } catch (RedisConnException e1) {
         }
         if (slotIdx == null) {
@@ -30,12 +30,12 @@ public class RedisIndicatorServiceImpl implements IndicatorService {
 
     @Override
     public void remove(String e) {
-        rm.hdel(true, INDICATOR_KEY, e);
+        rm.hdel(INDICATOR_KEY, e);
     }
 
     @Override
     public void put(String e, Slot slot) {
-        rm.hset(true, INDICATOR_KEY, e, slot.getId() + "");
+        rm.hset(INDICATOR_KEY, e, slot.getId() + "");
     }
 
 }

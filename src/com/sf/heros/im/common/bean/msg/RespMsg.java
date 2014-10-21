@@ -7,12 +7,6 @@ import java.util.Map;
 
 public class RespMsg extends Msg implements Serializable {
 
-    @Override
-    public String toString() {
-        return "RespMsg [type=" + type + ", time=" + time + ", data=" + data
-                + "]";
-    }
-
     private static final long serialVersionUID = 1L;
     private int type;
     private String time = new Date().getTime() + "";
@@ -38,18 +32,6 @@ public class RespMsg extends Msg implements Serializable {
         return time;
     }
 
-    public void setTime(String time) {
-        this.time = time;
-    }
-
-    public Map<String, Object> getData() {
-        return data;
-    }
-
-    public void setData(Map<String, Object> data) {
-        this.data = data;
-    }
-
     public void setToData(String key, Object val) {
         if (data == null) {
             data = new HashMap<String, Object>();
@@ -70,6 +52,12 @@ public class RespMsg extends Msg implements Serializable {
             return null;
         }
         return data.get(key);
+    }
+
+    @Override
+    public String toString() {
+        return "RespMsg [type=" + type + ", time=" + time + ", data=" + data
+                + "]";
     }
 
 }

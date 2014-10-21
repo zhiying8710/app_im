@@ -32,4 +32,10 @@ public class UserInfo {
         this.nickName = nickName;
     }
 
+    @Override
+    public String toString() {
+        return "UserInfo [id=" + id + ", head=" + head + ", nickName="
+                + nickName + "]";
+    }
+
 }

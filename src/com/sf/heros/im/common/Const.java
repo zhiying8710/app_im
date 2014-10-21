@@ -79,13 +79,17 @@ public class Const {
 
     public interface PropsConst {
 
-        public static final String IM_HOST = "im.host";
-        public static final String IM_PORT = "im.port";
-        public static final String REDIS_HOST = "redis.host";
-        public static final String REDIS_PORT = "redis.port";
+        public static final String REDIS_POOL_TYPE = "redis.pool.type";
         public static final String REDIS_DF_CONNS = "redis.default.conns";
         public static final String REDIS_DF_DB = "redis.df_db";
         public static final String REDIS_TIMEOUT = "redis.timeout";
+        public static final String REDIS_SINGLE_HOST = "redis.single.host";
+        public static final String REDIS_SINGLE_PORT = "redis.single.port";
+        public static final String REDIS_SENTINEL_MASTER_NAME = "reis.sentinel.master.name";
+        public static final String REDIS_SENTINEL_ADDRS = "redis.sentinel.addrs";
+
+        public static final String IM_HOST = "im.host";
+        public static final String IM_PORT = "im.port";
         public static final String PING_OVERTIME = "im.client.ping.overtime";
         public static final String CHANNEL_ALL_IDLE_SECS = "im.all.idle.secs";
         public static final String CHANNEL_READ_IDLE_SECS = "im.read.idle.secs";

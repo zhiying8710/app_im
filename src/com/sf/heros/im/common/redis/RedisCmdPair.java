@@ -1,6 +1,5 @@
 package com.sf.heros.im.common.redis;
 
-
 public class RedisCmdPair {
 
     private String cmd;

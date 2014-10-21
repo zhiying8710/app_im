@@ -26,7 +26,7 @@ public class RedisAuthServiceImpl implements AuthService {
     public AuthCheck check(String userId, String token) {
         AuthCheck check = new AuthCheck();
         try {
-            Map<String, String> info = rm.hgetAll(true, Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + userId);
+            Map<String, String> info = rm.hgetAll(Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + userId);
 
             if (PropsLoader.get(Const.PropsConst.AUTH_CHECK_SO_ILLAG, false)) {
                 if (info.isEmpty() || Const.RedisKeyValConst.USER_STATUS_VAL_ONLINE_ONLINE.equals(info.get(Const.RedisKeyValConst.USER_SATATUS_KEY_ONLINE))) {

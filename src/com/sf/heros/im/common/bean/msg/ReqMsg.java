@@ -29,22 +29,6 @@ public class ReqMsg extends Msg implements Serializable {
         this.type = type;
     }
 
-    public Map<String, Object> getData() {
-        return data;
-    }
-
-    public void setData(Map<String, Object> data) {
-        this.data = data;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
-    }
-
     public String getSid() {
         return sid;
     }
@@ -53,18 +37,16 @@ public class ReqMsg extends Msg implements Serializable {
         this.sid = sid;
     }
 
+    public String getTime() {
+        return time;
+    }
+
     public Object getFromData(String key, Object defaultVal) {
         if (data == null) {
             return defaultVal;
         }
         Object val = data.get(key);
         return val == null ? defaultVal : val;
-    }
-
-    @Override
-    public String toString() {
-        return "ReqMsg [type=" + type + ", data=" + data + ", time=" + time
-                + ", sid=" + sid + "]";
     }
 
     public void setToData(String key, Object val) {
@@ -79,5 +61,11 @@ public class ReqMsg extends Msg implements Serializable {
             return null;
         }
         return data.get(key);
+    }
+
+    @Override
+    public String toString() {
+        return "ReqMsg [type=" + type + ", data=" + data + ", time=" + time
+                + ", sid=" + sid + "]";
     }
 }

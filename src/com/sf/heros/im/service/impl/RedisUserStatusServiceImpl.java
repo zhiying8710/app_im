@@ -28,7 +28,7 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
         hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_SESSION_ID, sessionId);
         hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_LOGIN_TIME, loginTime + "");
         hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_ONLINE);
-        return rm.hmset(true, getKey(userId), hash);
+        return rm.hmset(getKey(userId), hash);
     }
 
     private String getKey(String userId) {
@@ -42,13 +42,13 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
 
     @Override
     public void userOffline(String userId) {
-        rm.hset(true, getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE);
+        rm.hset(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE);
     }
 
     @Override
     public String getSessionId(String userId) {
         try {
-            return rm.hget(true, getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_SESSION_ID);
+            return rm.hget(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_SESSION_ID);
         } catch (RedisConnException e) {
             return Const.RedisKeyValConst.SINGEL_ERR_VAL;
         }
@@ -57,8 +57,7 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
     @Override
     public boolean isOnline(String userId) {
         try {
-            return Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_ONLINE.equals(rm.hget(true, getKey(userId),
-                    Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE));
+            return Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_ONLINE.equals(rm.hget(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE));
         } catch (RedisConnException e) {
             return true;
         }
@@ -67,11 +66,11 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
     @Override
     public void offlineAll() {
         try {
-            Set<String> keys = rm.keys(RedisManagerV2.defaultDb.intValue(), Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + "*");
+            Set<String> keys = rm.keys(Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + "*");
             if (keys == null || keys.isEmpty()) {
                 return;
             }
-            if (!rm.del(true, keys.toArray(new String[keys.size()]))) {
+            if (!rm.del(keys.toArray(new String[keys.size()]))) {
                 throw new RedisConnException("del " + StringUtils.join(keys, ",") + " err.");
             }
         } catch (RedisConnException e) {

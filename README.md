@@ -9,10 +9,13 @@ netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json �
 <h2>配置说明<h2>
 
 <h4>redis</h4>
+<p>redis.pool.type=single // redis 连接池类型, single 表示单一节点, sentinel 表示为哨兵集群</p>
 <p>redis.host=127.0.0.1  // redis的 ip</p>
 <p>redis.port=6379 // redis 端口</p>
 <p>redis.df_db=0 // redis 默认 db</p>
 <p>redis.timeout=10 // redis 连接超时时间</p>
+<p>redis.sentinel.master.name=redisMaster // 哨兵集群的名称</p>
+<p>redis.sentinel.addrs=127.0.0.1:6379,127.0.0.1:6380,127.0.0.1:6381 // 哨兵集群的哨兵地址, 必须3个以上且必须为奇数</p>
 
 <h4>im</h4>
 <p>im.host=0.0.0.0  // 服务器绑定的 ip</p>

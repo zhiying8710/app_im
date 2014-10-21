@@ -116,18 +116,18 @@ public class UnAckRespMsgFixIntervalTimingWheel {
 
                 @Override
                 public void add(String e) {
-                    rm.sadd(true, this.getKey(), e);
+                    rm.sadd(this.getKey(), e);
                 }
 
                 @Override
                 public boolean remove(String e) {
-                    return rm.srem(true, this.getKey(), e);
+                    return rm.srem(this.getKey(), e);
                 }
 
                 @Override
                 public Set<String> elements() {
                     try {
-                        return rm.smembers(true, this.getKey());
+                        return rm.smembers(this.getKey());
                     } catch (RedisConnException e) {
                         return null;
                     }

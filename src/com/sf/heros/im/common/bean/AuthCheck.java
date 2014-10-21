@@ -30,4 +30,10 @@ public class AuthCheck {
         this.isIllegal = isIllegal;
     }
 
+    @Override
+    public String toString() {
+        return "AuthCheck [isPass=" + isPass + ", isOnline=" + isOnline
+                + ", isIllegal=" + isIllegal + "]";
+    }
+
 }

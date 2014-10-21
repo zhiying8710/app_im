@@ -23,6 +23,7 @@ import com.sf.heros.im.channel.TcpServerSocketChannel;
 import com.sf.heros.im.channel.UdtServerSocketChannel;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.PropsLoader;
+import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.handler.AckHandler;
 import com.sf.heros.im.handler.AuthHandler;
 import com.sf.heros.im.handler.FinalHandler;
@@ -56,6 +57,7 @@ public class AppMain {
 
     public AppMain() {
         PropsLoader.load();
+        RedisManagerV2.getInstance();
 
         String servType = PropsLoader.get(Const.PropsConst.SERVER_TYPE, Const.PropsConst.SERVER_TYPE_DEAFULT);
         logger.info("server type is " + servType);

@@ -1,16 +1,19 @@
 package com.sf.heros.im.common.redis;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Transaction;
 import redis.clients.util.Pool;
 
@@ -18,6 +21,9 @@ import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.PropsLoader;
 
 public class RedisManagerV2 {
+
+    private final static String REDIS_POOL_TYPE_SINGLE = "single";
+    private final static String REDIS_POOL_TYPE_SENTINEL = "sentinel";
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -28,20 +34,55 @@ public class RedisManagerV2 {
     public static Long defaultDb;
 
     private RedisManagerV2() {
-        String redisHost = PropsLoader.get(Const.PropsConst.REDIS_HOST, "127.0.0.1");
-        int redisPort = PropsLoader.get(Const.PropsConst.REDIS_PORT, 6379);
-        int defaultConns = PropsLoader.get(Const.PropsConst.REDIS_DF_CONNS, 100);
         defaultDb = new Long(PropsLoader.get(Const.PropsConst.REDIS_DF_DB, 0));
         int redisTimeout = PropsLoader.get(Const.PropsConst.REDIS_TIMEOUT, 10);
+        int defaultConns = PropsLoader.get(Const.PropsConst.REDIS_DF_CONNS, 100);
 
-        JedisPoolConfig dfConfig = new JedisPoolConfig();
-        dfConfig.setMaxTotal(defaultConns);
-        dfConfig.setMaxIdle(defaultConns / 10); // 最大空闲数, 0为无限制
-        dfConfig.setMaxWaitMillis(10 * 1000);
-        dfConfig.setTestOnBorrow(true);
-        dfConfig.setTestOnReturn(true);
+        String poolType = PropsLoader.get(Const.PropsConst.REDIS_POOL_TYPE, REDIS_POOL_TYPE_SINGLE);
+        if (poolType.equals(REDIS_POOL_TYPE_SINGLE)) {
+            String redisHost = PropsLoader.get(Const.PropsConst.REDIS_SINGLE_HOST, "127.0.0.1");
+            int redisPort = PropsLoader.get(Const.PropsConst.REDIS_SINGLE_PORT, 6379);
 
-        pool = new JedisPool(dfConfig, redisHost, redisPort, redisTimeout, null, defaultDb.intValue());
+            JedisPoolConfig dfConfig = new JedisPoolConfig();
+            dfConfig.setMaxTotal(defaultConns);
+            dfConfig.setMaxIdle(defaultConns / 10); // 最大空闲数, 0为无限制
+            dfConfig.setMaxWaitMillis(10 * 1000);
+            dfConfig.setTestOnBorrow(true);
+            dfConfig.setTestOnReturn(true);
+
+            pool = new JedisPool(dfConfig, redisHost, redisPort, redisTimeout, null, defaultDb.intValue());
+        } else if (poolType.equals(REDIS_POOL_TYPE_SENTINEL)) {
+            String masterName = PropsLoader.get(Const.PropsConst.REDIS_SENTINEL_MASTER_NAME, "");
+            if (masterName.equals("")) {
+                throw new IllegalArgumentException("redis sentinel must have a sentinel name.");
+            }
+            String addrsStr = PropsLoader.get(Const.PropsConst.REDIS_SENTINEL_ADDRS, "");
+            if (StringUtils.isBlank(addrsStr)) {
+                throw new IllegalArgumentException("redis sentinel must have >3 sentinel addrs and count%2 must == 1.");
+            }
+            String[] addrs = addrsStr.split(",");
+            Set<String> sentinels = new HashSet<String>();
+            for (String addr : addrs) {
+                if (StringUtils.isNoneBlank(addr)) {
+                    sentinels.add(addr);
+                }
+            }
+            if (sentinels.isEmpty() || sentinels.size() % 2 == 0) {
+                throw new IllegalArgumentException("redis sentinel must have >3 sentinel addrs and count%2 must == 1.");
+            }
+
+            JedisPoolConfig dfConfig = new JedisPoolConfig();
+            dfConfig.setMaxTotal(defaultConns);
+            dfConfig.setMaxIdle(defaultConns / 10); // 最大空闲数, 0为无限制
+            dfConfig.setMaxWaitMillis(10 * 1000);
+            dfConfig.setTestOnBorrow(true);
+            dfConfig.setTestOnReturn(true);
+
+            pool = new JedisSentinelPool(masterName, sentinels, dfConfig, redisTimeout, null, defaultDb.intValue());
+        } else {
+            throw new IllegalArgumentException(poolType + "is error or not supported now.");
+        }
+
 
     }
 
@@ -56,7 +97,7 @@ public class RedisManagerV2 {
         return instance;
     }
 
-    public Jedis connect(Long db) {
+    public Jedis connect() {
         try {
             lock.writeLock().lock();
             return pool.getResource();
@@ -79,10 +120,6 @@ public class RedisManagerV2 {
         }
     }
 
-    public Long getKeyDB(boolean df, String key) {
-        return defaultDb;
-    }
-
     /**
      * 删除一个key
      *
@@ -96,7 +133,7 @@ public class RedisManagerV2 {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = connect(getKeyDB(df, key));
+            j = connect();
             j.del(key);
             return true;
         } catch (Exception e) {
@@ -111,11 +148,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean del(Long keyDB, String...keys) {
+    public boolean del(String...keys) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = connect(keyDB);
+            j = connect();
             j.del(keys);
             return true;
         } catch (Exception e) {
@@ -139,11 +176,11 @@ public class RedisManagerV2 {
      * @param val
      * @return
      */
-    public boolean set(boolean df, String key, String val) {
+    public boolean set(String key, String val) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = connect(getKeyDB(df, key));
+            j = connect();
             j.set(key, val);
             return true;
         } catch (Exception e) {
@@ -158,40 +195,12 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean setnx(boolean df, String key, String val) {
+    public boolean setnx(String key, String val) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = connect(getKeyDB(df, key));
+            j = connect();
             return j.setnx(key, val) == 1;
-        } catch (Exception e) {
-            e.printStackTrace();
-            borrowOrOprSuccess = false;
-            this.returnBrokenResource(j);
-            return false;
-        } finally {
-            if (borrowOrOprSuccess) {
-                this.disConnected(j);
-            }
-        }
-    }
-
-    /**
-     * 设置一个string类型的key的值
-     *
-     * @param db
-     *            操作的数据库
-     * @param key
-     * @param val
-     * @return
-     */
-    public boolean set(int db, String key, String val) {
-        Jedis j = null;
-        boolean borrowOrOprSuccess = true;
-        try {
-            j = connect(new Long(db));
-            j.set(key, val);
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
             borrowOrOprSuccess = false;
@@ -211,11 +220,11 @@ public class RedisManagerV2 {
      * @return
      * @throws RedisConnException
      */
-    public String get(boolean df, String key) throws RedisConnException {
+    public String get(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.get(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -239,11 +248,11 @@ public class RedisManagerV2 {
      * @param vals
      * @return
      */
-    public boolean lpush(boolean df, String key, String... vals) {
+    public boolean lpush(String key, String... vals) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.lpush(key, vals);
             return true;
         } catch (Exception e) {
@@ -265,11 +274,11 @@ public class RedisManagerV2 {
      * @return
      * @throws RedisConnException
      */
-    public String lpop(boolean df, String key) throws RedisConnException {
+    public String lpop(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.lpop(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -285,18 +294,15 @@ public class RedisManagerV2 {
 
     /**
      * 放入一个或多个值到list的右端
-     *
-     * @param df
-     *            是否操作默认数据库
      * @param key
      * @param vals
      * @return
      */
-    public boolean rpush(boolean df, String key, String... vals) {
+    public boolean rpush(String key, String... vals) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.rpush(key, vals);
             return true;
         } catch (Exception e) {
@@ -318,11 +324,11 @@ public class RedisManagerV2 {
      * @return
      * @throws RedisConnException
      */
-    public String rpop(boolean df, String key) throws RedisConnException {
+    public String rpop(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.rpop(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -338,19 +344,19 @@ public class RedisManagerV2 {
 
     /**
      * 从list中取出一个区间的值, 从左往右数为从0开始, 从右往左数为从-1开始
-     *
      * @param key
      * @param start
      * @param end
+     *
      * @return
      * @throws RedisConnException
      */
-    public List<String> lrange(boolean df, String key, long start, long end)
+    public List<String> lrange(String key, long start, long end)
             throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.lrange(key, start, end);
         } catch (Exception e) {
             e.printStackTrace();
@@ -367,68 +373,28 @@ public class RedisManagerV2 {
 
     /**
      * 取出list中的所有元素
-     *
      * @param key
+     *
      * @return
      * @throws RedisConnException
      */
-    public List<String> lAll(boolean df, String key) throws RedisConnException {
-        return this.lrange(df, key, 0, -1);
-    }
-
-
-    public List<String> lAll(Long keyDB, String key) throws RedisConnException {
-        Jedis j = null;
-        boolean borrowOrOprSuccess = true;
-        try {
-            j = this.connect(keyDB);
-            return j.lrange(key, 0, -1);
-        } catch (Exception e) {
-            e.printStackTrace();
-            borrowOrOprSuccess = false;
-            this.returnBrokenResource(j);
-            throw new RedisConnException("redis command: lrange " + key + " "
-                    + 0 + " " + -1 + ", cause: " + e.getMessage());
-        } finally {
-            if (borrowOrOprSuccess) {
-                this.disConnected(j);
-            }
-        }
+    public List<String> lAll(String key) throws RedisConnException {
+        return this.lrange(key, 0, -1);
     }
 
     /**
      * 放入一个k-v对到一个hash
-     *
-     * @param df 是否操作的默认数据库
      * @param key
      * @param field
      * @param val
+     *
      * @return
      */
-    public boolean hset(boolean df, String key, String field, String val) {
+    public boolean hset(String key, String field, String val) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
-            j.hset(key, field, val);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            borrowOrOprSuccess = false;
-            this.returnBrokenResource(j);
-            return false;
-        } finally {
-            if (borrowOrOprSuccess) {
-                this.disConnected(j);
-            }
-        }
-    }
-
-    public boolean hset(Long keyDB, String key, String field, String val) {
-        Jedis j = null;
-        boolean borrowOrOprSuccess = true;
-        try {
-            j = this.connect(keyDB);
+            j = this.connect();
             j.hset(key, field, val);
             return true;
         } catch (Exception e) {
@@ -445,16 +411,16 @@ public class RedisManagerV2 {
 
     /**
      * get一个hash的所有值
-     *
      * @param key
+     *
      * @return
      * @throws RedisConnException
      */
-    public Map<String, String> hgetAll(boolean df, String key) throws RedisConnException {
+    public Map<String, String> hgetAll(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.hgetAll(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -471,17 +437,17 @@ public class RedisManagerV2 {
 
     /**
      * 获取hash中一个字段的值
-     *
      * @param key
      * @param field
+     *
      * @return
      * @throws RedisConnException
      */
-    public String hget(boolean df, String key, String field) throws RedisConnException {
+    public String hget(String key, String field) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.hget(key, field);
         } catch (Exception e) {
             e.printStackTrace();
@@ -503,11 +469,11 @@ public class RedisManagerV2 {
      * @return
      * @throws RedisConnException
      */
-    public List<String> hmget(boolean df, String key, String...fields) throws RedisConnException {
+    public List<String> hmget(String key, String...fields) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.hmget(key, fields);
         } catch (Exception e) {
             e.printStackTrace();
@@ -523,11 +489,11 @@ public class RedisManagerV2 {
     }
 
 
-    public Set<String> hkeys(boolean df, String key) throws RedisConnException {
+    public Set<String> hkeys(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.hkeys(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -543,17 +509,17 @@ public class RedisManagerV2 {
 
     /**
      * 删除一个hash中的多个field
-     *
      * @param key
      * @param fields
+     *
      * @return
      * @throws RedisConnException
      */
-    public boolean hdel(boolean df, String key, String... fields) {
+    public boolean hdel(String key, String... fields) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.hdel(key, fields);
             return true;
         } catch (Exception e) {
@@ -568,11 +534,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public long hlen(boolean df, String key) throws RedisConnException {
+    public long hlen(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.hlen(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -586,11 +552,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean hexists(boolean df, String key, String field) throws RedisConnException {
+    public boolean hexists(String key, String field) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.hexists(key, field);
         } catch (Exception e) {
             e.printStackTrace();
@@ -612,12 +578,12 @@ public class RedisManagerV2 {
      * @return
      */
     @SuppressWarnings("resource")
-    public boolean oMulti(int db, List<RedisCmdPair> cmdPairs) {
+    public boolean oMulti(List<RedisCmdPair> cmdPairs) {
         Jedis j = null;
         Transaction trans = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(new Long(db));
+            j = this.connect();
             trans = j.multi();
 
             for (RedisCmdPair cmdPair : cmdPairs) {
@@ -656,11 +622,11 @@ public class RedisManagerV2 {
      * @return
      * @throws RedisConnException
      */
-    public Set<String> keys(int db, String pattern) throws RedisConnException {
+    public Set<String> keys(String pattern) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(new Long(db));
+            j = this.connect();
             return j.keys(pattern);
         } catch (Exception e) {
             e.printStackTrace();
@@ -682,14 +648,14 @@ public class RedisManagerV2 {
      * @param nk new key
      * @return
      */
-    public boolean rename(int db, String ok, String nk) {
+    public boolean rename(String ok, String nk) {
         if (ok.equals(nk)) {
             return false;
         }
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(new Long(db));
+            j = this.connect();
             j.rename(ok, nk);
             return true;
         } catch (Exception e) {
@@ -706,17 +672,16 @@ public class RedisManagerV2 {
 
     /**
      * 向zset中插入一个或多个值
-     * @param df 是否操作的是默认数据库
      * @param key zset的key
      * @param score val的分数, 用于排序
      * @param vals 值
      * @return
      */
-    public boolean zadd(boolean df, String key, double score, String field) {
+    public boolean zadd(String key, double score, String field) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.zadd(key, score, field);
             return true;
         } catch (Exception e) {
@@ -731,11 +696,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public Double zscore(boolean df, String key, String field) throws RedisConnException {
+    public Double zscore(String key, String field) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.zscore(key, field);
         } catch (Exception e) {
             e.printStackTrace();
@@ -749,11 +714,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public Set<String> zrevrange(boolean df, String key, int start, int end) throws RedisConnException {
+    public Set<String> zrevrange(String key, int start, int end) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.zrevrange(key, start, end);
         } catch (Exception e) {
             e.printStackTrace();
@@ -767,11 +732,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean zrem(boolean df, String key, String field) {
+    public boolean zrem(String key, String field) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.zrem(key, field);
             return true;
         } catch (Exception e) {
@@ -786,11 +751,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public long llen(boolean df, String key) throws RedisConnException {
+    public long llen(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.llen(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -808,7 +773,7 @@ public class RedisManagerV2 {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(defaultDb);
+            j = this.connect();
             return j.ping();
         } catch (Exception e) {
             e.printStackTrace();
@@ -822,11 +787,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public String spop(boolean df, String key) throws RedisConnException {
+    public String spop(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.spop(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -840,11 +805,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public long incr(boolean df, String key) throws RedisConnException {
+    public long incr(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.incr(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -858,11 +823,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public Long expire(boolean df, String key, int expire) throws RedisConnException {
+    public Long expire(String key, int expire) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.expire(key, expire);
         } catch (Exception e) {
             e.printStackTrace();
@@ -876,11 +841,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean exist(boolean df, String key) throws RedisConnException {
+    public boolean exist(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.exists(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -894,29 +859,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean exist(int db, String key) throws RedisConnException {
+    public boolean sadd(String key, String field) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(new Long(db));
-            return j.exists(key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            borrowOrOprSuccess = false;
-            this.returnBrokenResource(j);
-            throw new RedisConnException("redis command: exist " + key + ", cause: " + e.getMessage());
-        } finally {
-            if (borrowOrOprSuccess) {
-                this.disConnected(j);
-            }
-        }
-    }
-
-    public boolean sadd(boolean df, String key, String field) {
-        Jedis j = null;
-        boolean borrowOrOprSuccess = true;
-        try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.sadd(key, field);
             return true;
         } catch (Exception e) {
@@ -931,11 +878,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean srem(boolean df, String key, String field) {
+    public boolean srem(String key, String field) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.srem(key, field);
             return true;
         } catch (Exception e) {
@@ -950,11 +897,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public long scard(boolean df, String key) throws RedisConnException {
+    public long scard(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.scard(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -968,11 +915,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public List<String> mget(int db, String...keys) throws RedisConnException {
+    public List<String> mget(String...keys) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(new Long(db));
+            j = this.connect();
             return j.mget(keys);
         } catch (Exception e) {
             e.printStackTrace();
@@ -986,11 +933,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean sismember(boolean df, String key, String member) throws RedisConnException {
+    public boolean sismember(String key, String member) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.sismember(key, member);
         } catch (Exception e) {
             e.printStackTrace();
@@ -1004,11 +951,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean hincrby(boolean df, String key, String field, int increment) {
+    public boolean hincrby(String key, String field, int increment) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.hincrBy(key, field, increment);
             return true;
         } catch (Exception e) {
@@ -1023,11 +970,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public long decr(boolean df, String key) throws RedisConnException {
+    public long decr(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             return j.decr(key);
         } catch (Exception e) {
             e.printStackTrace();
@@ -1041,12 +988,12 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean setex(boolean df, String key, int secs,
+    public boolean setex(String key, int secs,
             String value) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.setex(key, secs, value);
             return true;
         } catch (Exception e) {
@@ -1061,11 +1008,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean hmset(boolean df, String key,  Map<String, String> hash) {
+    public boolean hmset(String key,  Map<String, String> hash) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = this.connect(getKeyDB(df, key));
+            j = this.connect();
             j.hmset(key, hash);
             return true;
         } catch (Exception e) {
@@ -1080,30 +1027,11 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean del(boolean df, String... keys) {
+    public Set<String> smembers(String key) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
-            j = connect(defaultDb);
-            j.del(keys);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            borrowOrOprSuccess = false;
-            this.returnBrokenResource(j);
-            return false;
-        } finally {
-            if (borrowOrOprSuccess) {
-                this.disConnected(j);
-            }
-        }
-    }
-
-    public Set<String> smembers(boolean b, String key) throws RedisConnException {
-        Jedis j = null;
-        boolean borrowOrOprSuccess = true;
-        try {
-            j = this.connect(defaultDb);
+            j = this.connect();
             return j.smembers(key);
         } catch (Exception e) {
             e.printStackTrace();

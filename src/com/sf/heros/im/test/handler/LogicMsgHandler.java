@@ -110,7 +110,7 @@ public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
                 to = "null";
             }
             time = respMsg.getFromData(Const.RespAckMsgConst.DATA_SRC_TIME).toString();
-            String remark = respMsg.getData().get(Const.RespAckMsgConst.DATA_KEY_REMARK).toString();
+            String remark = respMsg.getFromData(Const.RespAckMsgConst.DATA_KEY_REMARK).toString();
             srcType = respMsg.getFromData(Const.ReqAckMsgConst.DATA_SRC_TYPE).toString();
             System.err.println("server handle msg : " + me + "_" + to + "_" + time + "_" + srcType + " error, remark : " + remark);
 //            System.err.println("server handle msg : " + reqMsgService.get(msgNo) + " error, remark : " + remark);
@@ -125,7 +125,7 @@ public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
             ctx.channel().close();
             break;
         case Const.RespMsgConst.TYPE_OFFLINE_MSG:
-            List<String> offlineMsgs = Const.CommonConst.GSON.fromJson(respMsg.getData().get(Const.RespMsgConst.DATA_KEY_OFFLINE_MSGS).toString(), new TypeToken<List<String>>(){}.getType());
+            List<String> offlineMsgs = Const.CommonConst.GSON.fromJson(respMsg.getFromData(Const.RespMsgConst.DATA_KEY_OFFLINE_MSGS).toString(), new TypeToken<List<String>>(){}.getType());
             for (String offlineMsg : offlineMsgs) {
                 System.err.println("got offline msg : " + offlineMsg);
             }
