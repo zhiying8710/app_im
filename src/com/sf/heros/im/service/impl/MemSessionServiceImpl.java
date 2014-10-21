@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.sf.heros.im.common.Session;
+import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.service.SessionService;
 
 public class MemSessionServiceImpl implements SessionService {
@@ -34,7 +34,10 @@ public class MemSessionServiceImpl implements SessionService {
 
     @Override
     public void updatePingTime(String id) {
-        sessions.get(id).setPingTime(new Date().getTime());
+        Session session = sessions.get(id);
+        if (session != null) {
+            session.setPingTime(new Date().getTime());
+        }
     }
 
     @Override

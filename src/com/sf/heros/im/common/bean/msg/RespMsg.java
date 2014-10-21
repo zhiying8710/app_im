@@ -1,4 +1,4 @@
-package com.sf.heros.im.common;
+package com.sf.heros.im.common.bean.msg;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -16,7 +16,7 @@ public class RespMsg extends Msg implements Serializable {
     private static final long serialVersionUID = 1L;
     private int type;
     private String time = new Date().getTime() + "";
-    private Map<String, Object> data = new HashMap<String, Object>();
+    private Map<String, Object> data;
 
     public RespMsg() {
     }

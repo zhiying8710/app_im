@@ -12,11 +12,15 @@ public class Const {
         public static final int TYPE_VOICE_MSG = 2;
         public static final int TYPE_LOGOUT = 4;
         public static final int TYPE_ACK = 5;
+        public static final int TYPE_LOGIN = 12;
 
 
         public static final String DATA_TO_USERID = "to";
-        public static final String DATA_FROM_USERID = "me";
+        public static final String DATA_FROM_USERID = "from";
         public static final String DATA_CONTENT = "content";
+
+        public static final String DATA_AUTH_USERID = "userId";
+        public static final String DATA_AUTH_TOKEN = "token";
 
     }
 
@@ -39,19 +43,22 @@ public class Const {
         public static final int TYPE_REQ_PING = 8;
         public static final int TYPE_SERVER_ERR = 9;
         public static final int TYPE_OFFLINE_MSG = 10;
+        public static final int TYPE_ASK_LOGIN = 11;
+        public static final int TYPE_LOGIN = 12;
 
         public static final String DATA_KEY_CONTENT = "content";
         public static final String DATA_KEY_FROM_USER_ID = "from";
         public static final String DATA_KEY_FROM_USER_INFO = "from_info";
         public static final String DATA_KEY_OFFLINE_MSGS = "offline_msgs";
         public static final String DATA_KEY_TO_USER_ID = "to";
+        public static final String DATA_KEY_LOGIN_SESSIONID = "sid";
     }
 
     public interface RespAckMsgConst {
 
         public static final String DATA_SRC_TO_USERID = "src_to";
         public static final String DATA_SRC_FROM_USERID = "src_from";
-        public static final String DATA_SRC_FROM_TIME = "src_time";
+        public static final String DATA_SRC_TIME = "src_time";
         public static final String DATA_KEY_REMARK = "remark";
         public static final String DATA_SRC_TYPE = "src_type";
 
@@ -121,10 +128,6 @@ public class Const {
     }
 
     public interface UserConst {
-
-        public static final String SESSION_USER_ID_KEY = "user_id";
-        public static final String SESSION_TOKEN_KEY = "token";
-
 
         public static final String INFO_KEY_HEAD_VAL = null;
         public static final String INFO_KEY_NICKNAME_DF_VAL = "John Doe";

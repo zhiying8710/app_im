@@ -1,4 +1,7 @@
-package com.sf.heros.im.common;
+package com.sf.heros.im.common.bean;
+
+import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.Const.UserConst;
 
 public class UserInfo {
 

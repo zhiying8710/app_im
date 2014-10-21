@@ -1,4 +1,4 @@
-package com.sf.heros.im.common;
+package com.sf.heros.im.common.bean;
 
 public class AuthCheck {
 

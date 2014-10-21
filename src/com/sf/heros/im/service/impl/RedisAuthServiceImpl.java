@@ -4,9 +4,9 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.sf.heros.im.common.AuthCheck;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.PropsLoader;
+import com.sf.heros.im.common.bean.AuthCheck;
 import com.sf.heros.im.common.exception.AuthChecException;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;

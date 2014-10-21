@@ -6,7 +6,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
 
-import com.sf.heros.im.common.RespMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 
 public class RespMsgDecoder extends ByteToMessageDecoder {
 

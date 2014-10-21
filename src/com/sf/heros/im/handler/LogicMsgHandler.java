@@ -8,11 +8,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.ImUtils;
-import com.sf.heros.im.common.ReqMsg;
-import com.sf.heros.im.common.RespMsg;
-import com.sf.heros.im.common.Session;
-import com.sf.heros.im.common.UserInfo;
+import com.sf.heros.im.common.bean.Session;
+import com.sf.heros.im.common.bean.UserInfo;
+import com.sf.heros.im.common.bean.msg.ReqMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.StringRespMsg;
+import com.sf.heros.im.common.bean.msg.VoiceRespMsg;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
@@ -55,10 +56,10 @@ public class LogicMsgHandler extends CommonInboundHandler {
         String sessionId = getSessionId(ctx);
         Session session = sessionService.get(sessionId);
         if (session != null) {
-            logger.warn("channle(" + sessionId + ") is closed, user offline.");
-            String userId = session.getAttr(Const.UserConst.SESSION_USER_ID_KEY).toString();
+            String userId = session.getUserId();
             userStatusService.userOffline(userId);
             sessionService.del(sessionId);
+            logger.warn("channle(" + sessionId + ") is closed, user offline.");
         }
     }
 
@@ -69,10 +70,10 @@ public class LogicMsgHandler extends CommonInboundHandler {
         if (msg instanceof ReqMsg) {
             try {
                 reqMsg = (ReqMsg) msg;
-                String me = reqMsg.getUserId();
-                UserInfo meInfo = null;
-                if (StringUtils.isNotBlank(me)) {
-                    meInfo = userInfoService.getById(me);
+                String from = sessionService.get(reqMsg.getSid()).getUserId();
+                UserInfo fromInfo = null;
+                if (StringUtils.isNotBlank(from)) {
+                    fromInfo = userInfoService.getById(from);
                 }
                 String to = null;
                 if (reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, null) != null) {
@@ -82,13 +83,16 @@ public class LogicMsgHandler extends CommonInboundHandler {
                 if (reqMsg.getFromData(Const.ReqMsgConst.DATA_CONTENT, null) != null) {
                     content = reqMsg.getFromData(Const.ReqMsgConst.DATA_CONTENT).toString();
                 }
-                RespMsg respMsg = new RespMsg();
+                RespMsg respMsg = null;
                 int type = reqMsg.getType();
-                respMsg.setType(type);
-                respMsg.setToData(Const.RespMsgConst.DATA_KEY_CONTENT, content);
-                respMsg.setToData(Const.RespMsgConst.DATA_KEY_FROM_USER_ID, me);
-                respMsg.setToData(Const.RespMsgConst.DATA_KEY_FROM_USER_INFO, meInfo);
-                respMsg.setToData(Const.RespMsgConst.DATA_KEY_TO_USER_ID, to);
+                switch (type) {
+                case Const.ReqMsgConst.TYPE_STRING_MSG:
+                    respMsg = new StringRespMsg(content, from, fromInfo, to);
+                    break;
+                case Const.ReqMsgConst.TYPE_VOICE_MSG:
+                    respMsg = new VoiceRespMsg(content, from, fromInfo, to);
+                    break;
+                }
                 switch (type) {
                 case Const.ReqMsgConst.TYPE_STRING_MSG:
                 case Const.ReqMsgConst.TYPE_VOICE_MSG:
@@ -111,23 +115,23 @@ public class LogicMsgHandler extends CommonInboundHandler {
                     }
                     if (online) {
                         Channel toChannel = sessionService.get(toSessionId).getChannel();
-                        toChannel.writeAndFlush(ImUtils.getBuf(toChannel.alloc(), respMsg));
                         String unAckMsgId = getUnAckMsgId(respMsg);
                         respMsgService.saveUnAck(unAckMsgId, respMsg);
                         unAckRespMsgService.add(unAckMsgId);
+                        writeAndFlush(toChannel, respMsg);
                     } else {
                         userStatusService.userOffline(to);
                         respMsgService.saveOffline(to, respMsg);
                     }
                     break;
                 case Const.ReqMsgConst.TYPE_LOGOUT:
-                    String sessionId = userStatusService.getSessionId(me);
-                    userStatusService.userOffline(me);
-                    sessionService.del(sessionId);
+                    userStatusService.userOffline(from);
+                    sessionService.del(reqMsg.getSid());
                     ctx.close();
                     break;
                 case Const.ReqMsgConst.TYPE_PING:
                 case Const.ReqMsgConst.TYPE_ACK:
+                case Const.ReqMsgConst.TYPE_LOGIN:
                 default:
                     break;
                 }

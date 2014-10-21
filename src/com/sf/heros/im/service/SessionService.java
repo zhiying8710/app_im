@@ -2,7 +2,7 @@ package com.sf.heros.im.service;
 
 import java.util.Collection;
 
-import com.sf.heros.im.common.Session;
+import com.sf.heros.im.common.bean.Session;
 
 public interface SessionService {
 

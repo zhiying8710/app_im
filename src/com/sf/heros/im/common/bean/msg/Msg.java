@@ -1,4 +1,6 @@
-package com.sf.heros.im.common;
+package com.sf.heros.im.common.bean.msg;
+
+import com.sf.heros.im.common.Const;
 
 public abstract class Msg {
 

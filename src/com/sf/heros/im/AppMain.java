@@ -28,7 +28,6 @@ import com.sf.heros.im.handler.AuthHandler;
 import com.sf.heros.im.handler.FinalHandler;
 import com.sf.heros.im.handler.HeartBeatHandler;
 import com.sf.heros.im.handler.LogicMsgHandler;
-import com.sf.heros.im.handler.PrintMsgHandler;
 import com.sf.heros.im.handler.ReSendUnAckRespMsgHandler;
 import com.sf.heros.im.handler.ReqMsgDecoder;
 import com.sf.heros.im.service.AuthService;
@@ -115,10 +114,10 @@ public class AppMain {
                                 throws Exception {
                             ch.pipeline()
                                     .addLast(Const.HandlerConst.HANDLER_MSG_DECODER_NAME, new ReqMsgDecoder())
-                                    .addLast(Const.HandlerConst.HANDLER_ACK_NAME, new AckHandler(respMsgService, unAckRespMsgService))
-                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, new PrintMsgHandler())
                                     .addLast(Const.HandlerConst.HANDLER_AUTH_NAME, new AuthHandler(authService, userStatusService, sessionService, respMsgService, unAckRespMsgService))
+                                    .addLast(Const.HandlerConst.HANDLER_ACK_NAME, new AckHandler(respMsgService, unAckRespMsgService, sessionService))
                                     .addLast(Const.HandlerConst.HANDLER_LOGIC_NAME, new LogicMsgHandler(sessionService, userStatusService, userInfoService, respMsgService, unAckRespMsgService))
+//                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, new PrintMsgHandler())
                                     .addLast(Const.HandlerConst.HANDLER_IDLE_STATE_CHECK_NAME,
                                             new IdleStateHandler(PropsLoader.get(Const.PropsConst.CHANNEL_WRITE_IDLE_SECS, 5),
                                                                  PropsLoader.get(Const.PropsConst.CHANNEL_READ_IDLE_SECS, 10),

@@ -21,21 +21,23 @@ public class UdtTestClient {
     public void connect(final String userId, final String token, final String toUserId) {
 
         NioEventLoopGroup workerGroup = new NioEventLoopGroup(10, Executors.defaultThreadFactory(), NioUdtProvider.BYTE_PROVIDER);
-
+        Bootstrap client = null;
         try {
 
-            Bootstrap client = new Bootstrap();
+            client = new Bootstrap();
             client.handler(new LoggingHandler(LogLevel.INFO)).channelFactory(NioUdtProvider.BYTE_CONNECTOR).group(workerGroup).handler(new ChannelInitializer<UdtChannel>() {
 
                 @Override
                 protected void initChannel(UdtChannel ch) throws Exception {
-                    ch.pipeline().addLast(new RespMsgDecoder(), new PrintHandler(), new LogicMsgHandler(null, userId, token, toUserId));
+                    ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO)).addLast(new RespMsgDecoder(), new PrintHandler(), new LogicMsgHandler(null, userId, token, toUserId));
                 }
             });
 
-            ChannelFuture clientFuture = client.connect("127.0.0.1", 9000).sync();
+            while (true) {
+                ChannelFuture clientFuture = client.connect("127.0.0.1", 9000).sync();
 
-            clientFuture.channel().closeFuture().sync();
+                clientFuture.channel().closeFuture().sync();
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

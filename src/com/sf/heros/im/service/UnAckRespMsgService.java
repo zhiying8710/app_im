@@ -1,6 +1,6 @@
 package com.sf.heros.im.service;
 
-import com.sf.heros.im.common.RespMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 
 public interface UnAckRespMsgService {
 

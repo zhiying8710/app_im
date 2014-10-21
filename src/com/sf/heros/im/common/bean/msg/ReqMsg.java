@@ -1,4 +1,4 @@
-package com.sf.heros.im.common;
+package com.sf.heros.im.common.bean.msg;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,16 +11,14 @@ public class ReqMsg extends Msg implements Serializable {
     private int type;
     private Map<String, Object> data;
     private String time = new Date().getTime() + "";
-    private String userId;
-    private String token;
+    private String sid;
 
     public ReqMsg() {
     }
 
-    public ReqMsg(String userId, String token) {
+    public ReqMsg(String sid) {
         super();
-        this.userId = userId;
-        this.token = token;
+        this.sid = sid;
     }
 
     public int getType() {
@@ -47,20 +45,12 @@ public class ReqMsg extends Msg implements Serializable {
         this.time = time;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getSid() {
+        return sid;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
+    public void setSid(String sid) {
+        this.sid = sid;
     }
 
     public Object getFromData(String key, Object defaultVal) {
@@ -74,7 +64,7 @@ public class ReqMsg extends Msg implements Serializable {
     @Override
     public String toString() {
         return "ReqMsg [type=" + type + ", data=" + data + ", time=" + time
-                + ", userId=" + userId + ", token=" + token + "]";
+                + ", sid=" + sid + "]";
     }
 
     public void setToData(String key, Object val) {

@@ -3,7 +3,7 @@ package com.sf.heros.im.service.impl;
 import java.util.Map;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.UserInfo;
+import com.sf.heros.im.common.bean.UserInfo;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.UserInfoService;

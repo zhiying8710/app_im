@@ -5,7 +5,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import org.apache.log4j.Logger;
 
-import com.sf.heros.im.common.ReqMsg;
+import com.sf.heros.im.common.bean.msg.ReqMsg;
 
 public class PrintMsgHandler extends SimpleChannelInboundHandler<ReqMsg> {
 

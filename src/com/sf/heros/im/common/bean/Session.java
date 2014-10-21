@@ -1,4 +1,4 @@
-package com.sf.heros.im.common;
+package com.sf.heros.im.common.bean;
 
 import io.netty.channel.Channel;
 
@@ -6,6 +6,10 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.PropsLoader;
+import com.sf.heros.im.common.Const.PropsConst;
 
 public class Session {
 
@@ -15,6 +19,8 @@ public class Session {
 
     private String id;
     private Channel channel;
+    private String userId;
+    private String token;
     private Map<String, Object> data = new ConcurrentHashMap<String, Object>();
     private int status;
     private long pingTime;
@@ -25,13 +31,31 @@ public class Session {
     public Session() {
     }
 
-    public Session(String id, Channel channel,
+    public Session(String id, Channel channel, String userId, String token,
             long pingTime, int status) {
         super();
         this.id = id;
         this.channel = channel;
         this.pingTime = pingTime;
         this.status = status;
+        this.userId = userId;
+        this.token = token;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public int getStatus() {

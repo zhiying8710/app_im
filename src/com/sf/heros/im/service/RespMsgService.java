@@ -2,7 +2,7 @@ package com.sf.heros.im.service;
 
 import java.util.List;
 
-import com.sf.heros.im.common.RespMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 
 public interface RespMsgService {
 

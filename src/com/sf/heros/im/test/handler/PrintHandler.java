@@ -1,6 +1,6 @@
 package com.sf.heros.im.test.handler;
 
-import com.sf.heros.im.common.RespMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

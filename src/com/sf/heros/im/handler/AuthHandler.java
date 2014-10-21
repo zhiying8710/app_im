@@ -1,9 +1,7 @@
 package com.sf.heros.im.handler;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.ReferenceCountUtil;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,13 +11,16 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.sf.heros.im.common.AuthCheck;
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.ImUtils;
-import com.sf.heros.im.common.ReqMsg;
-import com.sf.heros.im.common.RespMsg;
-import com.sf.heros.im.common.Session;
-import com.sf.heros.im.common.exception.AuthException;
+import com.sf.heros.im.common.bean.AuthCheck;
+import com.sf.heros.im.common.bean.Session;
+import com.sf.heros.im.common.bean.msg.KickedRespMsg;
+import com.sf.heros.im.common.bean.msg.LoginRespMsg;
+import com.sf.heros.im.common.bean.msg.OfflineMsgsRespMsg;
+import com.sf.heros.im.common.bean.msg.ReqMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.ServErrRespMsg;
+import com.sf.heros.im.common.bean.msg.AskLoginRespMsg;
 import com.sf.heros.im.service.AuthService;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
@@ -53,36 +54,64 @@ public class AuthHandler extends CommonInboundHandler {
             return;
         }
         ReqMsg reqMsg = (ReqMsg) msg;
+        int type = reqMsg.getType();
+        switch (type) {
+        case Const.ReqMsgConst.TYPE_ACK:
+        case Const.ReqMsgConst.TYPE_PING:
+            sessionService.updatePingTime(getSessionId(ctx));
+        case Const.ReqMsgConst.TYPE_LOGOUT:
+            ctx.fireChannelRead(msg);
+            return;
+        }
+
         try {
-            String userId = reqMsg.getUserId();
-            String token = reqMsg.getToken();
-            if (StringUtils.isBlank(userId) || StringUtils.isBlank(token)) {
-                throw new AuthException("userId or token can't be null or empty.");
+            String sessionId = reqMsg.getSid();
+            if (sessionId != null) {
+                Session session = sessionService.get(sessionId);
+                if (sessionId.equals(getSessionId(ctx)) && session != null) {
+                    if (Session.STATUS_KICKED == session.getStatus()) {
+                        Channel kickChannel = session.getChannel();
+                        writeAndFlush(kickChannel, new KickedRespMsg());
+                        releaseObjs(reqMsg, msg);
+                        logger.info("user(" + session.getUserId() + ") which session(" + sessionId + ") is kicked.");
+                        return;
+                    }
+                    sessionService.updatePingTime(sessionId);
+                    ctx.fireChannelRead(reqMsg);
+                    return;
+                } else {
+                    writeAndFlush(ctx.channel(), new AskLoginRespMsg());
+                    releaseObjs(reqMsg, msg);
+                    return;
+                }
             }
-            String sessionId = getSessionId(ctx);
-            Session session = sessionService.get(sessionId);
-            if (session != null && session.getStatus() == Session.STATUS_KICKED) {
-                sessionService.del(sessionId);
-                ChannelFuture kickFuture = ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), new RespMsg(Const.RespMsgConst.TYPE_KICKED)));
-                kickFuture.channel().closeFuture();
-                ReferenceCountUtil.release(reqMsg);
-                ReferenceCountUtil.release(msg);
+
+            String userId = reqMsg.getFromData(Const.ReqMsgConst.DATA_AUTH_USERID, "").toString();
+            String token = reqMsg.getFromData(Const.ReqMsgConst.DATA_AUTH_TOKEN, "").toString();
+            if (StringUtils.isBlank(userId) || StringUtils.isBlank(token)) {
+                writeAndFlush(ctx.channel(), new AskLoginRespMsg());
+                releaseObjs(reqMsg, msg);
                 return;
             }
+
             AuthCheck checkRes = authService.check(userId, token);
             if (!checkRes.isIllegal()) {
-                logger.warn("illegal connection, close it.");
                 userStatusService.userOffline(userId);
                 sessionService.del(sessionId);
                 ctx.close();
+                releaseObjs(reqMsg, msg);
+                logger.warn("illegal connection, close it.");
             }
-            if(checkRes.isPass()) { // pass check
+
+            sessionId = getSessionId(ctx);
+            RespMsg loginRespMsg = new LoginRespMsg(sessionId);
+            if (checkRes.isPass()) {
                 if (!checkRes.isOnline()) {
                     userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
-                    session = new Session(sessionId, ctx.channel(), new Date().getTime(), Session.STATUS_ONLINE);
-                    session.setAttr(Const.UserConst.SESSION_USER_ID_KEY, userId);
-                    session.setAttr(Const.UserConst.SESSION_TOKEN_KEY, token);
+                    Session session = new Session(sessionId, ctx.channel(), userId, token, new Date().getTime(), Session.STATUS_ONLINE);
                     sessionService.add(sessionId, session);
+                    writeAndFlush(ctx.channel(), loginRespMsg);
+                    logger.info("user(" + userId + ") login, return session id " + sessionId);
 
                     List<String> offlineMsgs = respMsgService.getOfflines(userId);
                     if (offlineMsgs != null && !offlineMsgs.isEmpty()) {
@@ -94,12 +123,8 @@ public class AuthHandler extends CommonInboundHandler {
                         List<String> perOfflineMsgs = new ArrayList<String>();
                         for (int i = 0; i < page; i++) {
                             if (k == Const.CommonConst.OFFLINE_MSG_SEND_PER_SIZE) {
-                                RespMsg respMsg = new RespMsg();
-                                respMsg.setType(Const.RespMsgConst.TYPE_OFFLINE_MSG);
-                                respMsg.setToData(Const.RespMsgConst.DATA_KEY_OFFLINE_MSGS, perOfflineMsgs);
-                                respMsg.setToData(Const.RespMsgConst.DATA_KEY_FROM_USER_ID, Const.CommonConst.SERVER_USER_ID + Const.CommonConst.KEY_SEP + new Date().getTime());
-                                respMsg.setToData(Const.RespMsgConst.DATA_KEY_TO_USER_ID, userId);
-                                ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), respMsg));
+                                RespMsg respMsg = new OfflineMsgsRespMsg(perOfflineMsgs, Const.CommonConst.SERVER_USER_ID + Const.CommonConst.KEY_SEP + new Date().getTime(), userId);
+                                writeAndFlush(ctx.channel(), respMsg);
 
                                 String unAckRespMsgId = getUnAckMsgId(respMsg);
                                 respMsgService.saveUnAck(unAckRespMsgId, respMsg);
@@ -115,29 +140,35 @@ public class AuthHandler extends CommonInboundHandler {
                     }
 
                 } else {
-//                    userStatusService.userOnline(userId, token, sessionId);
-                    sessionService.updatePingTime(sessionId);
-                }
-            } else { // illegal info
-                String kSessionId = userStatusService.getSessionId(userId);
-                if (Const.RedisKeyValConst.SINGEL_ERR_VAL.equals(kSessionId)) {
+                    String kSessionId = userStatusService.getSessionId(userId);
+                    if (Const.RedisKeyValConst.SINGEL_ERR_VAL.equals(kSessionId)) {
 
-                    RespMsg respMsg = new RespMsg();
-                    respMsg.setType(Const.RespMsgConst.TYPE_SERVER_ERR);
-                    ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), reqMsg));
+                        RespMsg respMsg = new ServErrRespMsg();
+                        writeAndFlush(ctx.channel(), respMsg);
+                        releaseObjs(respMsg);
+                        return;
+                    }
+                    Session kickSession = sessionService.kick(kSessionId);
 
-                }
-                Session kickSession = sessionService.kick(kSessionId);
-
-                userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
-                if (kickSession != null) {
-                    Channel kickChannel = kickSession.getChannel();
-                    ChannelFuture kickFuture = kickChannel.writeAndFlush(ImUtils.getBuf(kickChannel.alloc(), new RespMsg(Const.RespMsgConst.TYPE_KICKED)));
-                    kickFuture.channel().closeFuture();
-                    sessionService.del(kSessionId);
+                    if (kickSession != null) {
+                        Channel kickChannel = kickSession.getChannel();
+                        writeAndFlush(kickChannel, new KickedRespMsg());
+                        logger.info("user(" + userId + ") is login in more than onece, kick the first login.");
+                    }
+                    userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
+                    writeAndFlush(ctx.channel(), loginRespMsg);
                 }
             }
-            ctx.fireChannelRead(msg);
+
+            switch (type) {
+            case Const.ReqMsgConst.TYPE_STRING_MSG:
+            case Const.ReqMsgConst.TYPE_VOICE_MSG:
+                ctx.fireChannelRead(msg);
+                break;
+            default:
+                releaseObjs(reqMsg, msg);
+                break;
+            }
         } catch (Exception e) {
             logger.error("check user auth error.", e);
 //            RespMsg errAckMsg = new RespMsg(Const.RespMsgConst.TYPE_MSG_HANDLER_ERROR);
@@ -148,8 +179,7 @@ public class AuthHandler extends CommonInboundHandler {
 //            errAckMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
 //            ChannelFuture errFuture = ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), errAckMsg));
 //            errFuture.channel().closeFuture();
-            ReferenceCountUtil.release(reqMsg);
-            ReferenceCountUtil.release(msg);
+            releaseObjs(reqMsg, msg);
         } finally {
         }
     }

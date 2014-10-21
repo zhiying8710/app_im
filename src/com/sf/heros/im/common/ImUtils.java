@@ -6,6 +6,8 @@ import io.netty.buffer.ByteBufAllocator;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.sf.heros.im.common.bean.msg.Msg;
+
 public class ImUtils {
 
     private final static AtomicLong lastTime = new AtomicLong(System.currentTimeMillis());

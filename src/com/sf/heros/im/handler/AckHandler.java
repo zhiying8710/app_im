@@ -5,10 +5,11 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.ImUtils;
-import com.sf.heros.im.common.ReqMsg;
-import com.sf.heros.im.common.RespMsg;
+import com.sf.heros.im.common.bean.msg.AckRespMsg;
+import com.sf.heros.im.common.bean.msg.ReqMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 import com.sf.heros.im.service.RespMsgService;
+import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
 
 public class AckHandler extends CommonInboundHandler {
@@ -17,12 +18,14 @@ public class AckHandler extends CommonInboundHandler {
 
     private RespMsgService respMsgService;
     private UnAckRespMsgService unAckRespMsgService;
+    private SessionService sessionService;
 
     public AckHandler(RespMsgService respMsgService,
-            UnAckRespMsgService unAckRespMsgService) {
+            UnAckRespMsgService unAckRespMsgService, SessionService sessionService) {
         super();
         this.respMsgService = respMsgService;
         this.unAckRespMsgService = unAckRespMsgService;
+        this.sessionService = sessionService;
     }
 
     @Override
@@ -33,6 +36,7 @@ public class AckHandler extends CommonInboundHandler {
             return;
         }
         ReqMsg reqMsg = (ReqMsg) msg;
+        String sessionId = reqMsg.getSid();
         try {
             int reqType = reqMsg.getType();
             switch (reqType) {
@@ -47,22 +51,23 @@ public class AckHandler extends CommonInboundHandler {
                 break;
             case Const.ReqMsgConst.TYPE_STRING_MSG:// only {@link Const.ReqMsgConst.TYPE_STRING_MSG/TYPE_VOICE_MSG} need ack.
             case Const.ReqMsgConst.TYPE_VOICE_MSG:
-                RespMsg ackMsg = new RespMsg(Const.RespMsgConst.TYPE_ACK);
-                ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_TIME, reqMsg.getTime());
-                ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_FROM_USERID, reqMsg.getUserId());
-                ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TO_USERID, reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null"));
-                ackMsg.setToData(Const.RespAckMsgConst.DATA_SRC_TYPE, reqMsg.getType() + "");
-                ctx.channel().writeAndFlush(ImUtils.getBuf(ctx.alloc(), ackMsg));
+                RespMsg ackMsg = new AckRespMsg(reqMsg.getTime(), sessionService.get(sessionId).getUserId(), reqMsg.getFromData(Const.ReqMsgConst.DATA_TO_USERID, "null").toString(), reqMsg.getType());
+                writeAndFlush(ctx.channel(), ackMsg);
+
+                ctx.fireChannelRead(msg);
+                break;
+            case Const.ReqMsgConst.TYPE_LOGIN:
+                ctx.fireChannelRead(msg);
                 break;
             case Const.ReqMsgConst.TYPE_PING:
             case Const.ReqMsgConst.TYPE_LOGOUT:
             default:
+                releaseObjs(reqMsg, msg);
                 break;
             }
         } catch (Exception e) {
             logger.error("ack msg error.", e);
         } finally {
-            super.channelRead(ctx, msg);
         }
     }
 

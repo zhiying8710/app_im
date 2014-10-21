@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.RespMsg;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.RespMsgService;

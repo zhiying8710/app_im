@@ -3,7 +3,6 @@ package com.sf.heros.im.handler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -11,9 +10,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.ImUtils;
-import com.sf.heros.im.common.RespMsg;
-import com.sf.heros.im.common.Session;
+import com.sf.heros.im.common.bean.Session;
+import com.sf.heros.im.common.bean.msg.RespMsg;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
@@ -70,12 +68,9 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
                                     ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
                                 } else {
                                     Channel toChannel = session.getChannel();
-                                    try {
-                                        toChannel.writeAndFlush(ImUtils.getBuf(toChannel.alloc(), respMsg));
-                                        ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(unAckMsgId);
-                                        logger.info("resend msg " + unAck + " and re-wheel.");
-                                    } catch (UnsupportedEncodingException e) {
-                                    }
+                                    ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(unAckMsgId);
+                                    writeAndFlush(toChannel, respMsg);
+                                    logger.info("resend msg " + unAck + " and re-wheel.");
                                 }
                             } else {
                                 ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
@@ -90,8 +85,8 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
 
             @Override
             public void run() {
-                logger.info("release resource.");
                 ReSendUnAckRespMsgHandler.this.release();
+                logger.info("release resource.");
             }
         }));
 
