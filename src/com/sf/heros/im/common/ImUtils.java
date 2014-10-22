@@ -34,4 +34,12 @@ public class ImUtils {
         return MD5Util.encodeByMD5(uniqueMillis + nanos + remoteHost, remoteHost);
     }
 
+    public static ByteBuf getBuf(ByteBufAllocator allocator, String msg) throws UnsupportedEncodingException {
+        return allocator.buffer().writeBytes(msg.getBytes("utf-8"));
+    }
+
+    public static String getRespSubChannel(String sessionId) {
+        return Const.RedisKeyValConst.RESP_MSG_SUB_KEY_PREFIX + sessionId;
+    }
+
 }

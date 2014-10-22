@@ -1,6 +1,5 @@
 package com.sf.heros.im.handler;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 
 import java.util.concurrent.ExecutorService;
@@ -10,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.RespMsgPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.msg.RespMsg;
 import com.sf.heros.im.service.RespMsgService;
@@ -67,9 +67,14 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
                                     ReSendUnAckRespMsgHandler.this.userStatusService.userOffline(toUserId);
                                     ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
                                 } else {
-                                    Channel toChannel = session.getChannel();
+                                    try {
+                                        RespMsgPublisher.publish(sessionId, respMsg);
+                                    } catch (Exception e) {
+                                        logger.error("publish resp msg error", e);
+                                    }
+//                                    Channel toChannel = session.getChannel();
                                     ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(unAckMsgId);
-                                    writeAndFlush(toChannel, respMsg);
+//                                    writeAndFlush(toChannel, respMsg);
                                     logger.info("resend msg " + unAck + " and re-wheel.");
                                 }
                             } else {

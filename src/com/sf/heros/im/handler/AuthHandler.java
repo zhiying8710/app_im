@@ -1,6 +1,6 @@
 package com.sf.heros.im.handler;
 
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.util.ArrayList;
@@ -12,21 +12,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.RespMsgPublisher;
 import com.sf.heros.im.common.bean.AuthCheck;
 import com.sf.heros.im.common.bean.Session;
+import com.sf.heros.im.common.bean.msg.AskLoginRespMsg;
 import com.sf.heros.im.common.bean.msg.KickedRespMsg;
 import com.sf.heros.im.common.bean.msg.LoginRespMsg;
 import com.sf.heros.im.common.bean.msg.OfflineMsgsRespMsg;
 import com.sf.heros.im.common.bean.msg.ReqMsg;
 import com.sf.heros.im.common.bean.msg.RespMsg;
 import com.sf.heros.im.common.bean.msg.ServErrRespMsg;
-import com.sf.heros.im.common.bean.msg.AskLoginRespMsg;
 import com.sf.heros.im.service.AuthService;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
 import com.sf.heros.im.service.UserStatusService;
 
+@Sharable
 public class AuthHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(AuthHandler.class);
@@ -65,13 +67,13 @@ public class AuthHandler extends CommonInboundHandler {
         }
 
         try {
+
             String sessionId = reqMsg.getSid();
             if (sessionId != null) {
                 Session session = sessionService.get(sessionId);
                 if (sessionId.equals(getSessionId(ctx)) && session != null) {
                     if (Session.STATUS_KICKED == session.getStatus()) {
-                        Channel kickChannel = session.getChannel();
-                        writeAndFlush(kickChannel, new KickedRespMsg());
+                        RespMsgPublisher.publish(sessionId, new KickedRespMsg());
                         releaseObjs(reqMsg, msg);
                         logger.info("user(" + session.getUserId() + ") which session(" + sessionId + ") is kicked.");
                         return;
@@ -85,6 +87,26 @@ public class AuthHandler extends CommonInboundHandler {
                     return;
                 }
             }
+//            String sessionId = reqMsg.getSid();
+//            if (sessionId != null) {
+//                Session session = sessionService.get(sessionId);
+//                if (sessionId.equals(getSessionId(ctx)) && session != null) {
+//                    if (Session.STATUS_KICKED == session.getStatus()) {
+//                        Channel kickChannel = session.getChannel();
+//                        writeAndFlush(kickChannel, new KickedRespMsg());
+//                        releaseObjs(reqMsg, msg);
+//                        logger.info("user(" + session.getUserId() + ") which session(" + sessionId + ") is kicked.");
+//                        return;
+//                    }
+//                    sessionService.updatePingTime(sessionId);
+//                    ctx.fireChannelRead(reqMsg);
+//                    return;
+//                } else {
+//                    writeAndFlush(ctx.channel(), new AskLoginRespMsg());
+//                    releaseObjs(reqMsg, msg);
+//                    return;
+//                }
+//            }
 
             String userId = reqMsg.getFromData(Const.ReqMsgConst.DATA_AUTH_USERID, "").toString();
             String token = reqMsg.getFromData(Const.ReqMsgConst.DATA_AUTH_TOKEN, "").toString();
@@ -108,7 +130,7 @@ public class AuthHandler extends CommonInboundHandler {
             if (checkRes.isPass()) {
                 if (!checkRes.isOnline()) {
                     userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
-                    Session session = new Session(sessionId, ctx.channel(), userId, token, new Date().getTime(), Session.STATUS_ONLINE);
+                    Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE);
                     sessionService.add(sessionId, session);
                     writeAndFlush(ctx.channel(), loginRespMsg);
                     logger.info("user(" + userId + ") login, return session id " + sessionId);
@@ -151,10 +173,14 @@ public class AuthHandler extends CommonInboundHandler {
                     Session kickSession = sessionService.kick(kSessionId);
 
                     if (kickSession != null) {
-                        Channel kickChannel = kickSession.getChannel();
-                        writeAndFlush(kickChannel, new KickedRespMsg());
+                        RespMsgPublisher.publish(kSessionId, new KickedRespMsg());
                         logger.info("user(" + userId + ") is login in more than onece, kick the first login.");
                     }
+//                    if (kickSession != null) {
+//                        Channel kickChannel = kickSession.getChannel();
+//                        writeAndFlush(kickChannel, new KickedRespMsg());
+//                        logger.info("user(" + userId + ") is login in more than onece, kick the first login.");
+//                    }
                     userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
                     writeAndFlush(ctx.channel(), loginRespMsg);
                 }

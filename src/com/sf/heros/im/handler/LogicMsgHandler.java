@@ -1,6 +1,6 @@
 package com.sf.heros.im.handler;
 
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
 
@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.RespMsgPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.UserInfo;
 import com.sf.heros.im.common.bean.msg.ReqMsg;
@@ -20,6 +21,7 @@ import com.sf.heros.im.service.UnAckRespMsgService;
 import com.sf.heros.im.service.UserInfoService;
 import com.sf.heros.im.service.UserStatusService;
 
+@Sharable
 public class LogicMsgHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(LogicMsgHandler.class);
@@ -98,6 +100,7 @@ public class LogicMsgHandler extends CommonInboundHandler {
                 case Const.ReqMsgConst.TYPE_VOICE_MSG:
                     boolean online = userStatusService.isOnline(to);
                     String toSessionId = userStatusService.getSessionId(to);
+
                     if (online) {
                         if (toSessionId == null) {
                             online = false;
@@ -105,24 +108,44 @@ public class LogicMsgHandler extends CommonInboundHandler {
                             Session session = sessionService.get(toSessionId);
                             if (session == null || session.getStatus() == Session.STATUS_OFFLINE) {
                                 online = false;
-                            } else {
-                                Channel toChannel = session.getChannel();
-                                if (toChannel == null || !toChannel.isRegistered()) {
-                                    online = false;
-                                }
                             }
                         }
                     }
                     if (online) {
-                        Channel toChannel = sessionService.get(toSessionId).getChannel();
                         String unAckMsgId = getUnAckMsgId(respMsg);
                         respMsgService.saveUnAck(unAckMsgId, respMsg);
                         unAckRespMsgService.add(unAckMsgId);
-                        writeAndFlush(toChannel, respMsg);
+                        RespMsgPublisher.publish(toSessionId, respMsg);
                     } else {
                         userStatusService.userOffline(to);
                         respMsgService.saveOffline(to, respMsg);
                     }
+//
+//                    if (online) {
+//                        if (toSessionId == null) {
+//                            online = false;
+//                        } else {
+//                            Session session = sessionService.get(toSessionId);
+//                            if (session == null || session.getStatus() == Session.STATUS_OFFLINE) {
+//                                online = false;
+//                            } else {
+//                                Channel toChannel = session.getChannel();
+//                                if (toChannel == null || !toChannel.isRegistered()) {
+//                                    online = false;
+//                                }
+//                            }
+//                        }
+//                    }
+//                    if (online) {
+//                        Channel toChannel = sessionService.get(toSessionId).getChannel();
+//                        String unAckMsgId = getUnAckMsgId(respMsg);
+//                        respMsgService.saveUnAck(unAckMsgId, respMsg);
+//                        unAckRespMsgService.add(unAckMsgId);
+//                        writeAndFlush(toChannel, respMsg);
+//                    } else {
+//                        userStatusService.userOffline(to);
+//                        respMsgService.saveOffline(to, respMsg);
+//                    }
                     break;
                 case Const.ReqMsgConst.TYPE_LOGOUT:
                     userStatusService.userOffline(from);
@@ -156,3 +179,4 @@ public class LogicMsgHandler extends CommonInboundHandler {
 
     }
 }
+

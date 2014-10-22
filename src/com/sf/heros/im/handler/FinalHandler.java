@@ -1,9 +1,11 @@
 package com.sf.heros.im.handler;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelHandler.Sharable;
 
 import org.apache.log4j.Logger;
 
+@Sharable
 public class FinalHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(FinalHandler.class);

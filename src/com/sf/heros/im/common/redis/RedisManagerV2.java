@@ -13,6 +13,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Transaction;
 import redis.clients.util.Pool;
@@ -1045,5 +1046,47 @@ public class RedisManagerV2 {
             }
         }
     }
+
+    public void subscribe(JedisPubSub jedisPubSub, String... channels) throws RedisConnException {
+        Jedis j = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            j.subscribe(jedisPubSub, channels);
+        } catch (Exception e) {
+            e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            throw new RedisConnException("redis command: subscribe " + StringUtils.join(channels)
+                    + ", cause: " + e.getMessage());
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+
+    }
+
+    public boolean publish(String channel, String message) throws RedisConnException {
+
+        Jedis j = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            return j.publish(channel, message) == 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            throw new RedisConnException("redis command: publish " + channel + " " + message
+                    + ", cause: " + e.getMessage());
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+
+    }
+
 
 }

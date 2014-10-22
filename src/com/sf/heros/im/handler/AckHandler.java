@@ -1,6 +1,7 @@
 package com.sf.heros.im.handler;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelHandler.Sharable;
 
 import org.apache.log4j.Logger;
 
@@ -12,6 +13,7 @@ import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
 
+@Sharable
 public class AckHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(AckHandler.class);

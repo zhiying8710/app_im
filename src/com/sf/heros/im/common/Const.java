@@ -74,6 +74,7 @@ public class Const {
         public static final String HANDLER_AUTH_NAME = "auth";
         public static final String HANDLER_LOGIC_NAME = "logic";
         public static final String HANDLER_RE_SEND_UN_ACK_NAME = "reSendUnAck";
+        public static final String HANDLER_RESP_MSG_SUB_NAME = "respMsgSub";
 
     }
 
@@ -102,8 +103,9 @@ public class Const {
         public static final String SERVER_TYPE = "im.server.type";
         public static final String SERVER_TYPE_DEAFULT = "tcp";
         public static final String SERVER_TYPE_UDT = "udt";
-        public static final String WORKER_GROUP_THREADS = "im.server.udt.worker.threads";
+        public static final String WORKER_GROUP_THREADS = "im.server.worker.threads";
         public static final String SERVER_SOCKET_BACKLOG_COUNT = "im.server.socket.backlog.count";
+        public static final String BOSS_GROUP_THREADS = "im.server.boss.threads";
     }
 
     public interface RedisKeyValConst {
@@ -129,6 +131,7 @@ public class Const {
         public static final String USER_INFO_KEY_NICKNAME = "nickname";
 
         public static final String USER_OFFLINE_MSG_KEY_PREFIX = "__user_offline_msg_";
+        public static final String RESP_MSG_SUB_KEY_PREFIX = "__resp_msg_sub_";
     }
 
     public interface UserConst {

@@ -31,6 +31,7 @@ import com.sf.heros.im.handler.HeartBeatHandler;
 import com.sf.heros.im.handler.LogicMsgHandler;
 import com.sf.heros.im.handler.ReSendUnAckRespMsgHandler;
 import com.sf.heros.im.handler.ReqMsgDecoder;
+import com.sf.heros.im.handler.RespMsgSubHandler;
 import com.sf.heros.im.service.AuthService;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
@@ -66,11 +67,11 @@ public class AppMain {
         ServerBootstrap server = new ServerBootstrap();
         logger.info("create ServerBootstrap.");
         if (servType.equals(Const.PropsConst.SERVER_TYPE_DEAFULT)) {
-            bossGroup = new NioEventLoopGroup(1);
+            bossGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.BOSS_GROUP_THREADS, 5));
             workerGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.WORKER_GROUP_THREADS, 100));
             server.channel(TcpServerSocketChannel.class).childOption(ChannelOption.SO_KEEPALIVE, true);
         } else if (servType.equals(Const.PropsConst.SERVER_TYPE_UDT)) {
-            bossGroup = new NioEventLoopGroup(1,
+            bossGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.BOSS_GROUP_THREADS, 5),
                     Executors.defaultThreadFactory(), NioUdtProvider.BYTE_PROVIDER);
             workerGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.WORKER_GROUP_THREADS, 100),
                     Executors.defaultThreadFactory(), NioUdtProvider.BYTE_PROVIDER);
@@ -106,6 +107,18 @@ public class AppMain {
                     sessionService, userStatusService, respMsgService, unAckRespMsgService,
                     PropsLoader.get(Const.PropsConst.RE_SEND_UN_ACK_POOL_SIZE, 5));
 
+            final AckHandler ackHandler = new AckHandler(respMsgService, unAckRespMsgService, sessionService);
+
+            final AuthHandler authHandler = new AuthHandler(authService, userStatusService, sessionService, respMsgService, unAckRespMsgService);
+
+            final FinalHandler finalHandler = new FinalHandler();
+
+            final HeartBeatHandler heartBeatHandler = new HeartBeatHandler(userStatusService, sessionService);
+
+            final LogicMsgHandler logicMsgHandler = new LogicMsgHandler(sessionService, userStatusService, userInfoService, respMsgService, unAckRespMsgService);
+
+//            final PrintHandler printHandler = new PrintHandler();
+
             userStatusService.offlineAll();
             sessionService.delAll();
 
@@ -115,20 +128,20 @@ public class AppMain {
                         protected void initChannel(Channel ch)
                                 throws Exception {
                             ch.pipeline()
+                                    .addLast(Const.HandlerConst.HANDLER_RESP_MSG_SUB_NAME, new RespMsgSubHandler())
                                     .addLast(Const.HandlerConst.HANDLER_MSG_DECODER_NAME, new ReqMsgDecoder())
-                                    .addLast(Const.HandlerConst.HANDLER_AUTH_NAME, new AuthHandler(authService, userStatusService, sessionService, respMsgService, unAckRespMsgService))
-                                    .addLast(Const.HandlerConst.HANDLER_ACK_NAME, new AckHandler(respMsgService, unAckRespMsgService, sessionService))
-                                    .addLast(Const.HandlerConst.HANDLER_LOGIC_NAME, new LogicMsgHandler(sessionService, userStatusService, userInfoService, respMsgService, unAckRespMsgService))
-//                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, new PrintMsgHandler())
+                                    .addLast(Const.HandlerConst.HANDLER_AUTH_NAME, authHandler)
+                                    .addLast(Const.HandlerConst.HANDLER_ACK_NAME, ackHandler)
+                                    .addLast(Const.HandlerConst.HANDLER_LOGIC_NAME, logicMsgHandler)
+//                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, printHandler)
                                     .addLast(Const.HandlerConst.HANDLER_IDLE_STATE_CHECK_NAME,
                                             new IdleStateHandler(PropsLoader.get(Const.PropsConst.CHANNEL_WRITE_IDLE_SECS, 5),
                                                                  PropsLoader.get(Const.PropsConst.CHANNEL_READ_IDLE_SECS, 10),
                                                                  PropsLoader.get(Const.PropsConst.CHANNEL_ALL_IDLE_SECS, 15),
                                                                  TimeUnit.SECONDS))
-                                    .addLast(Const.HandlerConst.HANDLER_HEARTBEAT_NAME,
-                                            new HeartBeatHandler(userStatusService, sessionService))
+                                    .addLast(Const.HandlerConst.HANDLER_HEARTBEAT_NAME, heartBeatHandler)
                                     .addLast(Const.HandlerConst.HANDLER_RE_SEND_UN_ACK_NAME, reSendUnAckRespMsgHandler)
-                                    .addLast(new FinalHandler());
+                                    .addLast(finalHandler);
                         }
                     });
             logger.info("inited ServerBootstrap.");

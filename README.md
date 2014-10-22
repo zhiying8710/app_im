@@ -30,7 +30,9 @@ netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json �
 <p>im.auth.check.so.illegal=false // 是否检测 socket 连接建立之前已通过 http 接口获取 token, 测试时设为 false, 生成应为 true</p>
 <p>im.server.type=udt // 服务器采用的协议类型, 可以为 tcp 或 udt</p>
 <p>im.server.worker.threads=1000 // 工作线程数</p>
+<p>im.server.boss.threads=5 // 主reactor线程数</p>
 <p>im.server.socket.backlog.count=1000 // backlog 数</p>
+<p>im.client.ping.overtime=10000 // 两次 ping 的最大时间差, 单位毫秒</p>
 <br/>
 
 <h2>消息类型</h2>
