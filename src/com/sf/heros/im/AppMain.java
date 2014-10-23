@@ -1,6 +1,7 @@
 package com.sf.heros.im;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -69,7 +70,9 @@ public class AppMain {
         if (servType.equals(Const.PropsConst.SERVER_TYPE_DEAFULT)) {
             bossGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.BOSS_GROUP_THREADS, 5));
             workerGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.WORKER_GROUP_THREADS, 100));
-            server.channel(TcpServerSocketChannel.class).childOption(ChannelOption.SO_KEEPALIVE, true);
+            server.channel(TcpServerSocketChannel.class)
+                  .childOption(ChannelOption.SO_KEEPALIVE, true)
+                  .childOption(ChannelOption.TCP_NODELAY,true);
         } else if (servType.equals(Const.PropsConst.SERVER_TYPE_UDT)) {
             bossGroup = new NioEventLoopGroup(PropsLoader.get(Const.PropsConst.BOSS_GROUP_THREADS, 5),
                     Executors.defaultThreadFactory(), NioUdtProvider.BYTE_PROVIDER);
@@ -80,7 +83,13 @@ public class AppMain {
             logger.warn("unsupport server type, system exit.");
             System.exit(0);
         }
-        server.handler(new LoggingHandler(LogLevel.INFO)).option(ChannelOption.SO_BACKLOG, PropsLoader.get(Const.PropsConst.SERVER_SOCKET_BACKLOG_COUNT, 100)).group(bossGroup, workerGroup);
+        server.childOption(ChannelOption.SO_REUSEADDR,true)     //重用地址
+              .childOption(ChannelOption.ALLOCATOR,new PooledByteBufAllocator(true))
+              .childOption(ChannelOption.SO_RCVBUF, 1048576)
+              .childOption(ChannelOption.SO_SNDBUF,1048576)
+              .handler(new LoggingHandler(LogLevel.INFO))
+              .option(ChannelOption.SO_BACKLOG, PropsLoader.get(Const.PropsConst.SERVER_SOCKET_BACKLOG_COUNT, 100))
+              .group(bossGroup, workerGroup);
         logger.info("init boss and worker event loop group, and init channel type, parent channel options, child channel options.");
 
         boot(server);

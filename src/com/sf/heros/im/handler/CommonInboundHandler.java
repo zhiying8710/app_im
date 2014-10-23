@@ -72,6 +72,7 @@ public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
             for (Object obj : objs) {
                 if (obj != null) {
                     ReferenceCountUtil.release(obj);
+                    obj = null;
                 }
 
             }

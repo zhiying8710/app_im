@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,7 +22,15 @@ public class RespMsgSubHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(RespMsgSubHandler.class);
 
-    private ExecutorService subExecutor = Executors.newFixedThreadPool(1);
+    private ExecutorService subExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread th = new Thread(r);
+            th.setPriority(Thread.MAX_PRIORITY);
+            return th;
+        }
+    });
 
     private class RespMsgSubTask implements Callable<Void> {
 

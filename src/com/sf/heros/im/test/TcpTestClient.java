@@ -45,7 +45,7 @@ public class TcpTestClient {
     }
 
     public static void main(String[] args) {
-        int s = 200;
+        int s = 2;
         ExecutorService executor = Executors.newFixedThreadPool(s);
         for (int i = 0; i < s; i++) {
             final int j = i;

@@ -28,8 +28,7 @@ public class ReqMsgDecoder extends ByteToMessageDecoder {
                 out.add(reqMsg);
             } catch (Exception e) {
                 logger.error("decode msg to ReqMsg("+ sin +") failed.", e);
-//                out.add(in);
-                ctx.channel().closeFuture();
+                return;
             }
         }
 

@@ -35,13 +35,18 @@ public class HeartBeatHandler extends CommonInboundHandler {
             fire = false;
             IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
             String sessionId = getSessionId(ctx);
+            Session session = sessionService.get(sessionId);
             if (idleStateEvent.state() == IdleState.WRITER_IDLE) {
+                if (session == null) {
+                    ctx.close();
+                    logger.info("channel(" + sessionId + ") is write idle overtime, and user haven't login, close it.");
+                    return;
+                }
                 writeAndFlush(ctx.channel(), new ReqPingRespMsg());
                 logger.info("channel(" + sessionId + ") is write idle overtime, send a msg to req ping.");
             }
 
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
-                Session session = sessionService.get(sessionId);
                 if (session == null || session.overtime()) {
                     if (session != null) {
                         userStatusService.userOffline(session.getUserId());
@@ -54,7 +59,6 @@ public class HeartBeatHandler extends CommonInboundHandler {
 
             if (idleStateEvent.state() == IdleState.ALL_IDLE) {
                 logger.warn("channel(" + sessionId + ") is all idle overtime, user is offline.");
-                Session session = sessionService.get(sessionId);
                 if (session != null) {
                     userStatusService.userOffline(session.getUserId());
                 }

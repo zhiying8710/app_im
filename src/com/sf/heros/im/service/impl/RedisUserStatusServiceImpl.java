@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.Counter;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.UserStatusService;
@@ -28,7 +29,11 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
         hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_SESSION_ID, sessionId);
         hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_LOGIN_TIME, loginTime + "");
         hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_ONLINE);
-        return rm.hmset(getKey(userId), hash);
+        boolean r = rm.hmset(getKey(userId), hash);
+        if (r) {
+            Counter.incrOnlinesAndGet();
+        }
+        return r;
     }
 
     private String getKey(String userId) {
@@ -42,7 +47,9 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
 
     @Override
     public void userOffline(String userId) {
-        rm.hset(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE);
+        if (rm.hset(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE)) {
+            Counter.decrsOnlinesAndGet();
+        }
     }
 
     @Override
@@ -73,9 +80,11 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
             if (!rm.del(keys.toArray(new String[keys.size()]))) {
                 throw new RedisConnException("del " + StringUtils.join(keys, ",") + " err.");
             }
+            Counter.initOnlines();
         } catch (RedisConnException e) {
             throw new RuntimeException(e);
         }
     }
+
 
 }

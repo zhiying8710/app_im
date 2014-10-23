@@ -4,10 +4,15 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.ReferenceCountUtil;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.Counter;
 import com.sf.heros.im.common.RespMsgPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.UserInfo;
@@ -40,18 +45,35 @@ public class LogicMsgHandler extends CommonInboundHandler {
         this.userInfoService = userInfoService;
         this.respMsgService = respMsgService;
         this.unAckRespMsgService = unAckRespMsgService;
+
+        final ScheduledExecutorService counterExecutor = Executors.newSingleThreadScheduledExecutor();
+        counterExecutor.scheduleAtFixedRate(new Runnable() {
+
+            @Override
+            public void run() {
+                logger.info("current connections count : " + Counter.getConns() + ", current login user count : " + Counter.getOnlines());
+            }
+        }, 1, 10, TimeUnit.SECONDS);
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                counterExecutor.shutdownNow();
+            }
+        }));
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        Counter.incrConnsAndGet();
+        super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         userOffline(ctx);
+        Counter.decrConnsAndGet();
         super.channelInactive(ctx);
-    }
-
-    @Override
-    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        userOffline(ctx);
-        super.channelUnregistered(ctx);
     }
 
     private void userOffline(ChannelHandlerContext ctx) {
