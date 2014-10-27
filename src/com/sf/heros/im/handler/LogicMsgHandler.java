@@ -27,6 +27,7 @@ import com.sf.heros.im.service.UserInfoService;
 import com.sf.heros.im.service.UserStatusService;
 
 @Sharable
+@Deprecated
 public class LogicMsgHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(LogicMsgHandler.class);
@@ -134,7 +135,7 @@ public class LogicMsgHandler extends CommonInboundHandler {
                         }
                     }
                     if (online) {
-                        String unAckMsgId = getUnAckMsgId(respMsg);
+                        String unAckMsgId = respMsg.getUnAckMsgId();
                         respMsgService.saveUnAck(unAckMsgId, respMsg);
                         unAckRespMsgService.add(unAckMsgId);
                         RespMsgPublisher.publish(toSessionId, respMsg);

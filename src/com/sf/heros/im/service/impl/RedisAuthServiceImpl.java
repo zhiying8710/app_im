@@ -26,10 +26,10 @@ public class RedisAuthServiceImpl implements AuthService {
     public AuthCheck check(String userId, String token) {
         AuthCheck check = new AuthCheck();
         try {
-            Map<String, String> info = rm.hgetAll(Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + userId);
+            Map<String, String> info = rm.hgetAll(Const.RedisConst.USER_STATUS_KEY_PRIFIX + userId);
 
             if (PropsLoader.get(Const.PropsConst.AUTH_CHECK_SO_ILLAG, false)) {
-                if (info.isEmpty() || Const.RedisKeyValConst.USER_STATUS_VAL_ONLINE_ONLINE.equals(info.get(Const.RedisKeyValConst.USER_SATATUS_KEY_ONLINE))) {
+                if (info.isEmpty() || Const.RedisConst.USER_STATUS_VAL_ONLINE_ONLINE.equals(info.get(Const.RedisConst.USER_SATATUS_KEY_ONLINE))) {
                     check.setIllegal(false);
                     check.setPass(false);
                     check.setOnline(false);
@@ -37,14 +37,14 @@ public class RedisAuthServiceImpl implements AuthService {
                 }
             }
             check.setIllegal(true);
-            String soOnline = info.get(Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE);
+            String soOnline = info.get(Const.RedisConst.USER_STATUS_KEY_SO_ONLINE);
             if (info.isEmpty() ||
-                    Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE.equals(soOnline)) {
+                    Const.RedisConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE.equals(soOnline)) {
                 check.setOnline(false);
                 check.setPass(true);
                 return check;
             }
-            String oToken = info.get(Const.RedisKeyValConst.USER_STATUS_KEY_TOKEN);
+            String oToken = info.get(Const.RedisConst.USER_STATUS_KEY_TOKEN);
             check.setOnline(true);
             if (!oToken.equals(token)) {
                 check.setPass(false);

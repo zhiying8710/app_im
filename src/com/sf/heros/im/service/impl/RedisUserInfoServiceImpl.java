@@ -21,10 +21,10 @@ public class RedisUserInfoServiceImpl implements UserInfoService {
         UserInfo userInfo = new UserInfo();
         userInfo.setId(id);
         try {
-            Map<String, String> hash = rm.hgetAll(Const.RedisKeyValConst.USER_INFO_KEY_PREFIX + id);
+            Map<String, String> hash = rm.hgetAll(Const.RedisConst.USER_INFO_KEY_PREFIX + id);
             if (hash != null && !hash.isEmpty()) {
-                userInfo.setHead(hash.get(Const.RedisKeyValConst.USER_INFO_KEY_HEAD));
-                userInfo.setNickName(hash.get(Const.RedisKeyValConst.USER_INFO_KEY_NICKNAME));
+                userInfo.setHead(hash.get(Const.RedisConst.USER_INFO_KEY_HEAD));
+                userInfo.setNickName(hash.get(Const.RedisConst.USER_INFO_KEY_NICKNAME));
             }
             return userInfo;
         } catch (RedisConnException e) {

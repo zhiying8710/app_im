@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sf.heros.im.common.Const;
+
 public class ReqMsg extends Msg implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -61,6 +63,12 @@ public class ReqMsg extends Msg implements Serializable {
             return null;
         }
         return data.get(key);
+    }
+
+    public String getUnAckMsgIdFromAck() {
+
+        return this.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_USERID, "null") + Const.CommonConst.KEY_SEP + this.getFromData(Const.ReqAckMsgConst.DATA_SRC_TO_USERID, "null") + Const.CommonConst.KEY_SEP + this.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_TIME,"0");
+
     }
 
     @Override

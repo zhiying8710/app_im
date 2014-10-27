@@ -1,7 +1,7 @@
 package com.sf.heros.im.handler;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
 
 import org.apache.log4j.Logger;
 
@@ -14,6 +14,7 @@ import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
 
 @Sharable
+@Deprecated
 public class AckHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(AckHandler.class);
@@ -43,7 +44,7 @@ public class AckHandler extends CommonInboundHandler {
             int reqType = reqMsg.getType();
             switch (reqType) {
             case Const.ReqMsgConst.TYPE_ACK: // only {@link Const.ReqMsgConst.TYPE_STRING_MSG/TYPE_VOICE_MSG} need ack.
-                String unAckMsgId = getUnAckMsgIdFromAck(reqMsg);
+                String unAckMsgId = reqMsg.getUnAckMsgIdFromAck();
                 logger.info("got ack for " + unAckMsgId);
                 synchronized (unAckMsgId) {
                     unAckRespMsgService.remove(unAckMsgId);

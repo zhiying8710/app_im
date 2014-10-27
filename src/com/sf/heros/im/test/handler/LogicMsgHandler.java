@@ -23,14 +23,12 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
 
-    private ReqMsgService reqMsgService;
     private String userId;
     private String token;
     private String toUserId;
 
     public LogicMsgHandler(ReqMsgService reqMsgService, String userId, String token, String toUserId) {
         super();
-        this.reqMsgService = reqMsgService;
         this.userId = userId;
         this.token = token;
         this.toUserId = toUserId;

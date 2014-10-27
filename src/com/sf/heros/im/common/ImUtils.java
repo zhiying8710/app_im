@@ -39,7 +39,7 @@ public class ImUtils {
     }
 
     public static String getRespSubChannel(String sessionId) {
-        return Const.RedisKeyValConst.RESP_MSG_SUB_KEY_PREFIX + sessionId;
+        return Const.RedisConst.RESP_MSG_SUB_KEY_PREFIX + sessionId;
     }
 
 }

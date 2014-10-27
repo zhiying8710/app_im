@@ -1,37 +1,75 @@
 package com.sf.heros.im.common;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Counter {
 
     private static final AtomicLong connsCounter = new AtomicLong();
+    private static final ReentrantReadWriteLock connsLock = new ReentrantReadWriteLock();
     private static final AtomicLong onlinesCounter = new AtomicLong();
+    private static final ReentrantReadWriteLock onlinesLock = new ReentrantReadWriteLock();
 
     public static long incrConnsAndGet() {
-        return connsCounter.incrementAndGet();
+        connsLock.writeLock().lock();
+        try {
+            return connsCounter.incrementAndGet();
+        } finally {
+            connsLock.writeLock().unlock();
+        }
     }
 
     public static long decrConnsAndGet() {
-        return connsCounter.decrementAndGet();
+        connsLock.writeLock().lock();
+        try {
+            return connsCounter.decrementAndGet();
+        } finally {
+            connsLock.writeLock().unlock();
+        }
     }
 
     public static long getConns() {
-        return connsCounter.get();
+        connsLock.readLock().lock();
+        try {
+            return connsCounter.get();
+        } finally {
+            connsLock.readLock().unlock();
+        }
     }
 
     public static long incrOnlinesAndGet() {
-        return onlinesCounter.incrementAndGet();
+        onlinesLock.writeLock().lock();
+        try {
+            return onlinesCounter.incrementAndGet();
+        } finally {
+            onlinesLock.writeLock().unlock();
+        }
     }
 
-    public static long decrsOnlinesAndGet() {
-        return onlinesCounter.decrementAndGet();
+    public static long decrOnlinesAndGet() {
+        onlinesLock.writeLock().lock();
+        try {
+            return onlinesCounter.decrementAndGet();
+        } finally {
+            onlinesLock.writeLock().unlock();
+        }
     }
 
     public static long getOnlines() {
-        return onlinesCounter.get();
+        onlinesLock.readLock().lock();
+        try {
+            return onlinesCounter.get();
+        } finally {
+            onlinesLock.readLock().unlock();
+        }
     }
 
     public static void initOnlines() {
-        onlinesCounter.set(0);
+        onlinesLock.readLock().lock();
+        try {
+            onlinesCounter.set(0);
+        } finally {
+            onlinesLock.readLock().unlock();
+        }
     }
 }

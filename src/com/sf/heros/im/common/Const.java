@@ -75,6 +75,7 @@ public class Const {
         public static final String HANDLER_LOGIC_NAME = "logic";
         public static final String HANDLER_RE_SEND_UN_ACK_NAME = "reSendUnAck";
         public static final String HANDLER_RESP_MSG_SUB_NAME = "respMsgSub";
+        public static final String HANDLER_LOGIC_EVENT_NAME = "loginEvent";
 
     }
 
@@ -108,7 +109,7 @@ public class Const {
         public static final String BOSS_GROUP_THREADS = "im.server.boss.threads";
     }
 
-    public interface RedisKeyValConst {
+    public interface RedisConst {
 
         public static final String USER_STATUS_KEY_PRIFIX = "__user_status_";
         public static final String USER_STATUS_KEY_TOKEN = "token";

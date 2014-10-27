@@ -33,6 +33,7 @@ import com.sf.heros.im.handler.LogicMsgHandler;
 import com.sf.heros.im.handler.ReSendUnAckRespMsgHandler;
 import com.sf.heros.im.handler.ReqMsgDecoder;
 import com.sf.heros.im.handler.RespMsgSubHandler;
+import com.sf.heros.im.handler.ServerHandler;
 import com.sf.heros.im.service.AuthService;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
@@ -53,6 +54,7 @@ import com.sf.heros.im.timingwheel.service.impl.MemWheelServiceImpl;
 import com.sf.heros.im.timingwheel.service.impl.RedisIndicatorServiceImpl;
 import com.sf.heros.im.timingwheel.service.impl.SlotKeyServiceImpl;
 
+@SuppressWarnings("deprecation")
 public class AppMain {
 
     private static final Logger logger = Logger.getLogger(AppMain.class);
@@ -92,9 +94,102 @@ public class AppMain {
               .group(bossGroup, workerGroup);
         logger.info("init boss and worker event loop group, and init channel type, parent channel options, child channel options.");
 
-        boot(server);
+//        boot(server);
+        run(server);
     }
 
+    public void run(ServerBootstrap server) {
+
+        try {
+
+            final AuthService authService = new RedisAuthServiceImpl();
+            final UserStatusService userStatusService = new RedisUserStatusServiceImpl();
+            final SessionService sessionService = new MemSessionServiceImpl();
+            final UserInfoService userInfoService = new RedisUserInfoServiceImpl();
+            final RespMsgService respMsgService = new RedisRespMsgServiceImpl();
+            WheelService wheel = new MemWheelServiceImpl();
+            IndicatorService indicator = new RedisIndicatorServiceImpl();
+            SlotKeyService slotKeyService = new SlotKeyServiceImpl();
+            final UnAckRespMsgService unAckRespMsgService = new MemUnAckRespMsgServiceImpl(new UnAckRespMsgFixIntervalTimingWheel(
+                    PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_DURATION_SECS, 3),
+                    PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_PER_SLOT_SECS, 1), TimeUnit.SECONDS,
+                    PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_NAME, "un_ack_msg_wheel"), wheel, indicator, slotKeyService, respMsgService));
+
+            final ReSendUnAckRespMsgHandler reSendUnAckRespMsgHandler = new ReSendUnAckRespMsgHandler(
+                    sessionService, userStatusService, respMsgService, unAckRespMsgService,
+                    PropsLoader.get(Const.PropsConst.RE_SEND_UN_ACK_POOL_SIZE, 5));
+
+            final FinalHandler finalHandler = new FinalHandler();
+
+            final ServerHandler serverHandler = new ServerHandler(authService, sessionService, userStatusService, userInfoService, respMsgService, unAckRespMsgService);
+
+//            final PrintHandler printHandler = new PrintHandler();
+
+            userStatusService.offlineAll();
+            sessionService.delAll();
+
+            server.childHandler(new ChannelInitializer<Channel>() {
+
+                        @Override
+                        protected void initChannel(Channel ch)
+                                throws Exception {
+                            ch.pipeline()
+                                    .addLast(Const.HandlerConst.HANDLER_RESP_MSG_SUB_NAME, new RespMsgSubHandler())
+                                    .addLast(Const.HandlerConst.HANDLER_RE_SEND_UN_ACK_NAME, reSendUnAckRespMsgHandler)
+                                    .addLast(Const.HandlerConst.HANDLER_MSG_DECODER_NAME, new ReqMsgDecoder())
+//                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, printHandler)
+                                    .addLast(Const.HandlerConst.HANDLER_IDLE_STATE_CHECK_NAME,
+                                            new IdleStateHandler(PropsLoader.get(Const.PropsConst.CHANNEL_READ_IDLE_SECS, 10),
+                                                                 PropsLoader.get(Const.PropsConst.CHANNEL_WRITE_IDLE_SECS, 5),
+                                                                 PropsLoader.get(Const.PropsConst.CHANNEL_ALL_IDLE_SECS, 15),
+                                                                 TimeUnit.SECONDS))
+                                    .addLast(Const.HandlerConst.HANDLER_LOGIC_EVENT_NAME, serverHandler)
+                                    .addLast(finalHandler);
+                        }
+                    });
+            logger.info("inited ServerBootstrap.");
+            String servHost = PropsLoader.get(Const.PropsConst.IM_HOST, "127.0.0.1");
+            int servPort = PropsLoader.get(Const.PropsConst.IM_PORT, 9000);
+            ChannelFuture bindFuture = server.bind(servHost, servPort).sync();
+            logger.info("bound ServerBootstrap to " + servHost + ":" + servPort + ", app booted.");
+
+            bindFuture.channel().closeFuture().sync();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("error occured.", e);
+        } finally {
+
+            class AppShutdownHook implements Runnable {
+
+                private List<EventLoopGroup> groups = new ArrayList<EventLoopGroup>();
+
+                public AppShutdownHook(EventLoopGroup... groups) {
+                    for (EventLoopGroup group : groups) {
+                        this.groups.add(group);
+                    }
+                }
+
+                @Override
+                public void run() {
+                    for (EventLoopGroup group : this.groups) {
+                        if (group != null && !group.isShutdown()) {
+                            group.shutdownGracefully();
+                        }
+                    }
+                    logger.info("shutdown groups gracefully and app is shutdown.");
+                }
+
+            }
+            if (server != null) {
+                Runtime.getRuntime().addShutdownHook(new Thread(new AppShutdownHook(server.childGroup(), server.group())));
+            }
+
+            System.exit(0);
+        }
+
+    }
+
+    @Deprecated
     public void boot(ServerBootstrap server) {
 
         try {
@@ -144,8 +239,8 @@ public class AppMain {
                                     .addLast(Const.HandlerConst.HANDLER_LOGIC_NAME, logicMsgHandler)
 //                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, printHandler)
                                     .addLast(Const.HandlerConst.HANDLER_IDLE_STATE_CHECK_NAME,
-                                            new IdleStateHandler(PropsLoader.get(Const.PropsConst.CHANNEL_WRITE_IDLE_SECS, 5),
-                                                                 PropsLoader.get(Const.PropsConst.CHANNEL_READ_IDLE_SECS, 10),
+                                            new IdleStateHandler(PropsLoader.get(Const.PropsConst.CHANNEL_READ_IDLE_SECS, 10),
+                                                                 PropsLoader.get(Const.PropsConst.CHANNEL_WRITE_IDLE_SECS, 5),
                                                                  PropsLoader.get(Const.PropsConst.CHANNEL_ALL_IDLE_SECS, 15),
                                                                  TimeUnit.SECONDS))
                                     .addLast(Const.HandlerConst.HANDLER_HEARTBEAT_NAME, heartBeatHandler)

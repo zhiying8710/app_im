@@ -13,6 +13,7 @@ import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UserStatusService;
 
 @Sharable
+@Deprecated
 public class HeartBeatHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(HeartBeatHandler.class);

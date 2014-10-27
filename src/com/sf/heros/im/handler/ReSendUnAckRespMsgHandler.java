@@ -55,7 +55,7 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
                         RespMsg respMsg = RespMsg.fromJson(unAckRespMsg, RespMsg.class);
                         String toUserId = respMsg.getFromData(Const.RespMsgConst.DATA_KEY_TO_USER_ID, "null").toString();
                         String sessionId = ReSendUnAckRespMsgHandler.this.userStatusService.getSessionId(toUserId);
-                        String unAckMsgId = ReSendUnAckRespMsgHandler.this.getUnAckMsgId(respMsg);
+                        String unAckMsgId = respMsg.getUnAckMsgId();
                         synchronized (unAckMsgId) {
                             String unAck = ReSendUnAckRespMsgHandler.this.respMsgService.getUnAck(unAckMsgId);
                             if (unAck == null) {

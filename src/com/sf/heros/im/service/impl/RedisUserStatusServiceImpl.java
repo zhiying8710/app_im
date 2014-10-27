@@ -25,10 +25,10 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
     public boolean userOnline(String userId, String token, String sessionId,
             long loginTime) {
         Map<String, String> hash = new HashMap<String, String>();
-        hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_TOKEN, token);
-        hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_SESSION_ID, sessionId);
-        hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_LOGIN_TIME, loginTime + "");
-        hash.put(Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_ONLINE);
+        hash.put(Const.RedisConst.USER_STATUS_KEY_TOKEN, token);
+        hash.put(Const.RedisConst.USER_STATUS_KEY_SO_SESSION_ID, sessionId);
+        hash.put(Const.RedisConst.USER_STATUS_KEY_SO_LOGIN_TIME, loginTime + "");
+        hash.put(Const.RedisConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisConst.USER_STATUS_VAL_SO_ONLINE_ONLINE);
         boolean r = rm.hmset(getKey(userId), hash);
         if (r) {
             Counter.incrOnlinesAndGet();
@@ -37,7 +37,7 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
     }
 
     private String getKey(String userId) {
-        return Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + userId;
+        return Const.RedisConst.USER_STATUS_KEY_PRIFIX + userId;
     }
 
     @Override
@@ -47,24 +47,27 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
 
     @Override
     public void userOffline(String userId) {
-        if (rm.hset(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE)) {
-            Counter.decrsOnlinesAndGet();
+        try {
+            if (rm.exist(getKey(userId)) && rm.hset(getKey(userId), Const.RedisConst.USER_STATUS_KEY_SO_ONLINE, Const.RedisConst.USER_STATUS_VAL_SO_ONLINE_OFFLINE)) {
+                Counter.decrOnlinesAndGet();
+            }
+        } catch (RedisConnException e) {
         }
     }
 
     @Override
     public String getSessionId(String userId) {
         try {
-            return rm.hget(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_SESSION_ID);
+            return rm.hget(getKey(userId), Const.RedisConst.USER_STATUS_KEY_SO_SESSION_ID);
         } catch (RedisConnException e) {
-            return Const.RedisKeyValConst.SINGEL_ERR_VAL;
+            return Const.RedisConst.SINGEL_ERR_VAL;
         }
     }
 
     @Override
     public boolean isOnline(String userId) {
         try {
-            return Const.RedisKeyValConst.USER_STATUS_VAL_SO_ONLINE_ONLINE.equals(rm.hget(getKey(userId), Const.RedisKeyValConst.USER_STATUS_KEY_SO_ONLINE));
+            return Const.RedisConst.USER_STATUS_VAL_SO_ONLINE_ONLINE.equals(rm.hget(getKey(userId), Const.RedisConst.USER_STATUS_KEY_SO_ONLINE));
         } catch (RedisConnException e) {
             return true;
         }
@@ -73,7 +76,7 @@ public class RedisUserStatusServiceImpl implements UserStatusService {
     @Override
     public void offlineAll() {
         try {
-            Set<String> keys = rm.keys(Const.RedisKeyValConst.USER_STATUS_KEY_PRIFIX + "*");
+            Set<String> keys = rm.keys(Const.RedisConst.USER_STATUS_KEY_PRIFIX + "*");
             if (keys == null || keys.isEmpty()) {
                 return;
             }

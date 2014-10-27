@@ -29,6 +29,7 @@ import com.sf.heros.im.service.UnAckRespMsgService;
 import com.sf.heros.im.service.UserStatusService;
 
 @Sharable
+@Deprecated
 public class AuthHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(AuthHandler.class);
@@ -148,7 +149,7 @@ public class AuthHandler extends CommonInboundHandler {
                                 RespMsg respMsg = new OfflineMsgsRespMsg(perOfflineMsgs, Const.CommonConst.SERVER_USER_ID + Const.CommonConst.KEY_SEP + new Date().getTime(), userId);
                                 writeAndFlush(ctx.channel(), respMsg);
 
-                                String unAckRespMsgId = getUnAckMsgId(respMsg);
+                                String unAckRespMsgId = respMsg.getUnAckMsgId();
                                 respMsgService.saveUnAck(unAckRespMsgId, respMsg);
                                 unAckRespMsgService.add(unAckRespMsgId);
 
@@ -163,7 +164,7 @@ public class AuthHandler extends CommonInboundHandler {
 
                 } else {
                     String kSessionId = userStatusService.getSessionId(userId);
-                    if (Const.RedisKeyValConst.SINGEL_ERR_VAL.equals(kSessionId)) {
+                    if (Const.RedisConst.SINGEL_ERR_VAL.equals(kSessionId)) {
 
                         RespMsg respMsg = new ServErrRespMsg();
                         writeAndFlush(ctx.channel(), respMsg);
