@@ -72,9 +72,7 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
                                     } catch (Exception e) {
                                         logger.error("publish resp msg error", e);
                                     }
-//                                    Channel toChannel = session.getChannel();
                                     ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(unAckMsgId);
-//                                    writeAndFlush(toChannel, respMsg);
                                     logger.info("resend msg " + unAck + " and re-wheel.");
                                 }
                             } else {

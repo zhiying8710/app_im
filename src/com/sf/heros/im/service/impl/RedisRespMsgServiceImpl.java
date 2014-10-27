@@ -23,30 +23,40 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     public String getUnAck(String unAckRespMsgId) {
 
         try {
-            return rm.hget(Const.RedisConst.RESP_MSG_UNACK_KEY, unAckRespMsgId);
+            String unAckMsg = rm.hget(getRespMsgUnAckKey(), unAckRespMsgId);
+            rm.hdel(getRespMsgUnAckKey(), unAckRespMsgId);
+            return unAckMsg;
         } catch (RedisConnException e) {
             return null;
         }
 
     }
 
+    private String getRespMsgUnAckKey() {
+        return Const.RedisConst.RESP_MSG_UNACK_KEY;
+    }
+
     @Override
     public void saveUnAck(String unAckRespMsgId, RespMsg respMsg) {
 
-        rm.hset(Const.RedisConst.RESP_MSG_UNACK_KEY, unAckRespMsgId, respMsg.toJson());
+        rm.hset(getRespMsgUnAckKey(), unAckRespMsgId, respMsg.toJson());
 
     }
 
     @Override
     public void saveOffline(String userId, RespMsg respMsg) {
-        rm.rpush(Const.RedisConst.USER_OFFLINE_MSG_KEY_PREFIX + userId, respMsg.toJson());
+        rm.rpush(getUserOfflineMsgKey(userId), respMsg.toJson());
+    }
+
+    private String getUserOfflineMsgKey(String userId) {
+        return Const.RedisConst.USER_OFFLINE_MSG_KEY_PREFIX + userId;
     }
 
     @Override
     public List<String> getOfflines(String userId) {
 
         try {
-            String key = Const.RedisConst.USER_OFFLINE_MSG_KEY_PREFIX + userId;
+            String key = getUserOfflineMsgKey(userId);
             List<String> offlines = rm.lAll(key);
             rm.del(key);
             return offlines;
@@ -59,14 +69,14 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     @Override
     public void delUnAck(String unAckRespMsgId) {
 
-        rm.hdel(Const.RedisConst.RESP_MSG_UNACK_KEY, unAckRespMsgId);
+        rm.hdel(getRespMsgUnAckKey(), unAckRespMsgId);
 
     }
 
     @Override
     public RespMsg getUnAckMsg(String unAckRespMsgId) {
         try {
-            String msg = rm.hget(Const.RedisConst.RESP_MSG_UNACK_KEY, unAckRespMsgId);
+            String msg = rm.hget(getRespMsgUnAckKey(), unAckRespMsgId);
             if (StringUtils.isBlank(msg)) {
                 return null;
             }
@@ -80,7 +90,7 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     public List<RespMsg> getOfflineMsgs(String userId) {
 
         try {
-            List<String> msgs = rm.lAll(Const.RedisConst.USER_OFFLINE_MSG_KEY_PREFIX + userId);
+            List<String> msgs = rm.lAll(getUserOfflineMsgKey(userId));
             if (msgs == null || msgs.isEmpty()) {
                 return null;
             }

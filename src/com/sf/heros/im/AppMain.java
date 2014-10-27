@@ -45,6 +45,7 @@ import com.sf.heros.im.service.impl.MemUnAckRespMsgServiceImpl;
 import com.sf.heros.im.service.impl.RedisAuthServiceImpl;
 import com.sf.heros.im.service.impl.RedisRespMsgServiceImpl;
 import com.sf.heros.im.service.impl.RedisSessionServiceImpl;
+import com.sf.heros.im.service.impl.RedisUnAckRespMsgServiceImpl;
 import com.sf.heros.im.service.impl.RedisUserInfoServiceImpl;
 import com.sf.heros.im.service.impl.RedisUserStatusServiceImpl;
 import com.sf.heros.im.timingwheel.UnAckRespMsgFixIntervalTimingWheel;
@@ -112,10 +113,16 @@ public class AppMain {
             WheelService wheel = new MemWheelServiceImpl();
             IndicatorService indicator = new RedisIndicatorServiceImpl();
             SlotKeyService slotKeyService = new SlotKeyServiceImpl();
-            final UnAckRespMsgService unAckRespMsgService = new MemUnAckRespMsgServiceImpl(new UnAckRespMsgFixIntervalTimingWheel(
+//            final UnAckRespMsgService unAckRespMsgService = new MemUnAckRespMsgServiceImpl(new UnAckRespMsgFixIntervalTimingWheel(
+//                    PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_DURATION_SECS, 3),
+//                    PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_PER_SLOT_SECS, 1), TimeUnit.SECONDS,
+//                    PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_NAME, "un_ack_msg_wheel"), wheel, indicator, slotKeyService, respMsgService));
+
+            final UnAckRespMsgService unAckRespMsgService = new RedisUnAckRespMsgServiceImpl(new UnAckRespMsgFixIntervalTimingWheel(
                     PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_DURATION_SECS, 3),
                     PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_PER_SLOT_SECS, 1), TimeUnit.SECONDS,
                     PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_NAME, "un_ack_msg_wheel"), wheel, indicator, slotKeyService, respMsgService));
+
 
             final ReSendUnAckRespMsgHandler reSendUnAckRespMsgHandler = new ReSendUnAckRespMsgHandler(
                     sessionService, userStatusService, respMsgService, unAckRespMsgService,
