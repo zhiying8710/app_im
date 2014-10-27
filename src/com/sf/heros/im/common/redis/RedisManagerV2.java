@@ -15,6 +15,8 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.JedisSentinelPool;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
 import redis.clients.util.Pool;
 
@@ -124,31 +126,10 @@ public class RedisManagerV2 {
     /**
      * 删除一个key
      *
-     * @param df
-     *            是否操作的是默认数据库
      * @param keys
      * @return
      * @throws RedisConnException
      */
-    public boolean del(boolean df, String key) {
-        Jedis j = null;
-        boolean borrowOrOprSuccess = true;
-        try {
-            j = connect();
-            j.del(key);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            borrowOrOprSuccess = false;
-            this.returnBrokenResource(j);
-            return false;
-        } finally {
-            if (borrowOrOprSuccess) {
-                this.disConnected(j);
-            }
-        }
-    }
-
     public boolean del(String...keys) {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
@@ -1080,6 +1061,30 @@ public class RedisManagerV2 {
             this.returnBrokenResource(j);
             throw new RedisConnException("redis command: publish " + channel + " " + message
                     + ", cause: " + e.getMessage());
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+
+    }
+
+    public ScanResult<String> scan(String cursor, String pattern, int count) throws RedisConnException {
+
+        Jedis j = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            ScanParams scanParams = new ScanParams();
+            scanParams.match(pattern);
+            scanParams.count(count);
+            return j.scan(cursor, scanParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            throw new RedisConnException("redis command: scan " + cursor + " match " + pattern
+                    + " count " + count + ", cause: " + e.getMessage());
         } finally {
             if (borrowOrOprSuccess) {
                 this.disConnected(j);

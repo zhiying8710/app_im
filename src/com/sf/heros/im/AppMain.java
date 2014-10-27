@@ -44,6 +44,7 @@ import com.sf.heros.im.service.impl.MemSessionServiceImpl;
 import com.sf.heros.im.service.impl.MemUnAckRespMsgServiceImpl;
 import com.sf.heros.im.service.impl.RedisAuthServiceImpl;
 import com.sf.heros.im.service.impl.RedisRespMsgServiceImpl;
+import com.sf.heros.im.service.impl.RedisSessionServiceImpl;
 import com.sf.heros.im.service.impl.RedisUserInfoServiceImpl;
 import com.sf.heros.im.service.impl.RedisUserStatusServiceImpl;
 import com.sf.heros.im.timingwheel.UnAckRespMsgFixIntervalTimingWheel;
@@ -104,7 +105,8 @@ public class AppMain {
 
             final AuthService authService = new RedisAuthServiceImpl();
             final UserStatusService userStatusService = new RedisUserStatusServiceImpl();
-            final SessionService sessionService = new MemSessionServiceImpl();
+//            final SessionService sessionService = new MemSessionServiceImpl();
+            final SessionService sessionService = new RedisSessionServiceImpl();
             final UserInfoService userInfoService = new RedisUserInfoServiceImpl();
             final RespMsgService respMsgService = new RedisRespMsgServiceImpl();
             WheelService wheel = new MemWheelServiceImpl();

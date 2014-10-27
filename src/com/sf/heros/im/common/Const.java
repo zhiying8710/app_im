@@ -133,6 +133,7 @@ public class Const {
 
         public static final String USER_OFFLINE_MSG_KEY_PREFIX = "__user_offline_msg_";
         public static final String RESP_MSG_SUB_KEY_PREFIX = "__resp_msg_sub_";
+        public static final String SESSION_KEY_PREFIX = "__session_";
     }
 
     public interface UserConst {

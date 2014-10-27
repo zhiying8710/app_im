@@ -1,6 +1,7 @@
 package com.sf.heros.im.common.bean;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -120,6 +121,38 @@ public class Session {
 
     public void setAttr(String attrKey, Object val) {
         data.put(attrKey, val);
+    }
+
+    private void setData(Map<String, Object> data) {
+        this.data = data;
+    }
+
+    public Map<String, Object> serialToMap() {
+        Map<String, Object> serial = new HashMap<String, Object>();
+        serial.put("id", id);
+        serial.put("userId", userId);
+        serial.put("token", token);
+        serial.put("data", Const.CommonConst.GSON.toJson(data));
+        serial.put("status", status);
+        serial.put("pingTime", pingTime);
+        return serial;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void fillFromSerial(Map<String, String> serial) {
+        this.setId(serial.get("id"));
+        this.setUserId(serial.get("userId"));
+        this.setToken(serial.get("token"));
+        this.setData(Const.CommonConst.GSON.fromJson(serial.get("data"), Map.class));
+        this.setStatus(new Integer(serial.get("status")));
+        this.setPingTime(new Long(serial.get("pingTime")));
+    }
+
+    @Override
+    public String toString() {
+        return "Session [id=" + id + ", userId=" + userId + ", token=" + token
+                + ", data=" + data + ", status=" + status + ", pingTime="
+                + pingTime + "]";
     }
 
 }
