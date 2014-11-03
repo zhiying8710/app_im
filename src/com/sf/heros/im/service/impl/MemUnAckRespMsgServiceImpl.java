@@ -3,7 +3,7 @@ package com.sf.heros.im.service.impl;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.UnAckRespMsgQueue;
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.service.UnAckRespMsgService;
 import com.sf.heros.im.timingwheel.UnAckRespMsgFixIntervalTimingWheel;
 
@@ -40,7 +40,7 @@ public class MemUnAckRespMsgServiceImpl implements
     }
 
     @Override
-    public boolean pushToQueue(RespMsg unAckMsg) {
+    public boolean pushToQueue(Resp unAckMsg) {
         return pushToQueue(unAckMsg.toJson());
     }
 

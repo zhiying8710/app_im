@@ -1,26 +1,21 @@
 package com.sf.heros.im.common.bean.msg;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.sf.heros.im.common.Const;
-
-public class ReqMsg extends Msg implements Serializable {
+public class Req extends ReqResp implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private Long sid;
     private int type;
     private Map<String, Object> data;
-    private String time = new Date().getTime() + "";
-    private String sid;
 
-    public ReqMsg() {
-    }
-
-    public ReqMsg(String sid) {
+    public Req(Long sid, int type, Map<String, Object> data) {
         super();
         this.sid = sid;
+        this.type = type;
+        this.data = data;
     }
 
     public int getType() {
@@ -31,16 +26,16 @@ public class ReqMsg extends Msg implements Serializable {
         this.type = type;
     }
 
-    public String getSid() {
+    public Long getSid() {
         return sid;
     }
 
-    public void setSid(String sid) {
+    public void setSid(Long sid) {
         this.sid = sid;
     }
 
-    public String getTime() {
-        return time;
+    public Map<String, Object> getData() {
+        return data;
     }
 
     public Object getFromData(String key, Object defaultVal) {
@@ -65,15 +60,9 @@ public class ReqMsg extends Msg implements Serializable {
         return data.get(key);
     }
 
-    public String getUnAckMsgIdFromAck() {
-
-        return this.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_USERID, "null") + Const.CommonConst.KEY_SEP + this.getFromData(Const.ReqAckMsgConst.DATA_SRC_TO_USERID, "null") + Const.CommonConst.KEY_SEP + this.getFromData(Const.ReqAckMsgConst.DATA_SRC_FROM_TIME,"0");
-
-    }
-
     @Override
     public String toString() {
-        return "ReqMsg [type=" + type + ", data=" + data + ", time=" + time
-                + ", sid=" + sid + "]";
+        return "Req [sid=" + sid + ", type=" + type + ", data=" + data + "]";
     }
+
 }

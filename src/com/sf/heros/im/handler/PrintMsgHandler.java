@@ -6,15 +6,15 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import org.apache.log4j.Logger;
 
-import com.sf.heros.im.common.bean.msg.ReqMsg;
+import com.sf.heros.im.common.bean.msg.Req;
 
 @Sharable
-public class PrintMsgHandler extends SimpleChannelInboundHandler<ReqMsg> {
+public class PrintMsgHandler extends SimpleChannelInboundHandler<Req> {
 
     private static final Logger logger = Logger.getLogger(PrintMsgHandler.class);
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ReqMsg msg)
+    protected void channelRead0(ChannelHandlerContext ctx, Req msg)
             throws Exception {
         logger.info("got msg : " + msg);
         ctx.fireChannelRead(msg);

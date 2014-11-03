@@ -15,6 +15,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.JedisSentinelPool;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 import redis.clients.jedis.Transaction;
@@ -815,7 +816,7 @@ public class RedisManagerV2 {
             e.printStackTrace();
             borrowOrOprSuccess = false;
             this.returnBrokenResource(j);
-            throw new RedisConnException("redis command: incr " + key + ", cause: " + e.getMessage());
+            throw new RedisConnException("redis command: expire " + key + " " + expire + ", cause: " + e.getMessage());
         } finally {
             if (borrowOrOprSuccess) {
                 this.disConnected(j);
@@ -1093,5 +1094,41 @@ public class RedisManagerV2 {
 
     }
 
+    public boolean hsetnx(String key, String field, String val) {
+        Jedis j = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            j.hsetnx(key, field, val);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            return false;
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+    }
+
+    public Pipeline pipeline() {
+        Jedis j = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            return j.pipelined();
+        } catch (Exception e) {
+            e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            return null;
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+    }
 
 }

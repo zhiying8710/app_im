@@ -1,21 +1,21 @@
 package com.sf.heros.im.handler;
 
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.Counter;
 import com.sf.heros.im.common.bean.Session;
-import com.sf.heros.im.common.bean.msg.ReqMsg;
-import com.sf.heros.im.common.bean.msg.ReqPingRespMsg;
+import com.sf.heros.im.common.bean.msg.Req;
+import com.sf.heros.im.common.bean.msg.ReqPingResp;
 import com.sf.heros.im.req.controller.AckController;
 import com.sf.heros.im.req.controller.ChatController;
 import com.sf.heros.im.req.controller.CommonController;
@@ -42,22 +42,22 @@ public class ServerHandler extends CommonInboundHandler {
         super();
         this.sessionService = sessionService;
         this.userStatusService = userStatusService;
-        CommonController.add(Const.ReqMsgConst.TYPE_ACK, new AckController(sessionService, respMsgService, unAckRespMsgService));
-        CommonController.add(Const.ReqMsgConst.TYPE_LOGIN, new LoginController(authService, userStatusService, sessionService, respMsgService, unAckRespMsgService));
-        CommonController.add(Const.ReqMsgConst.TYPE_LOGOUT, new LogoutController(userStatusService, sessionService));
-        CommonController.add(Const.ReqMsgConst.TYPE_PING, new PingController(sessionService));
+        CommonController.add(Const.ReqConst.TYPE_ACK, new AckController(sessionService, respMsgService, unAckRespMsgService));
+        CommonController.add(Const.ReqConst.TYPE_LOGIN, new LoginController(authService, userStatusService, sessionService, respMsgService, unAckRespMsgService));
+        CommonController.add(Const.ReqConst.TYPE_LOGOUT, new LogoutController(userStatusService, sessionService));
+        CommonController.add(Const.ReqConst.TYPE_PING, new PingController(sessionService));
         ChatController chatController = new ChatController(userStatusService, sessionService, respMsgService, unAckRespMsgService, userInfoService);
-        CommonController.add(Const.ReqMsgConst.TYPE_STRING_MSG, chatController);
-        CommonController.add(Const.ReqMsgConst.TYPE_VOICE_MSG, chatController);
+        CommonController.add(Const.ReqConst.TYPE_STRING_MSG, chatController);
+        CommonController.add(Const.ReqConst.TYPE_VOICE_MSG, chatController);
 
         final ScheduledExecutorService counterExecutor = Executors.newSingleThreadScheduledExecutor();
-        counterExecutor.scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            public void run() {
-                logger.info("current connections count : " + Counter.getConns() + ", current login user count : " + Counter.getOnlines());
-            }
-        }, 1, 10, TimeUnit.SECONDS);
+//        counterExecutor.scheduleAtFixedRate(new Runnable() {
+//
+//            @Override
+//            public void run() {
+//                logger.info("current connections count : " + Counter.getConns() + ", current login user count : " + Counter.getOnlines());
+//            }
+//        }, 1, 10, TimeUnit.SECONDS);
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 
             @Override
@@ -69,19 +69,19 @@ public class ServerHandler extends CommonInboundHandler {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        Counter.incrConnsAndGet();
+        Counter.ConnsCounter.INSTANCE.incrAndGet();
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         userOffline(ctx);
-        Counter.decrConnsAndGet();
+        Counter.ConnsCounter.INSTANCE.decrAndGet();
         super.channelInactive(ctx);
     }
 
     private void userOffline(ChannelHandlerContext ctx) {
-        String sessionId = getSessionId(ctx);
+        Long sessionId = ClientChannelIdUtil.getId(ctx);
         Session session = sessionService.get(sessionId);
         if (session != null) {
             String userId = session.getUserId();
@@ -94,12 +94,12 @@ public class ServerHandler extends CommonInboundHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-        ReqMsg reqMsg = null;
-        if (msg instanceof ReqMsg) {
+        Req reqMsg = null;
+        if (msg instanceof Req) {
             try {
-                reqMsg = (ReqMsg) msg;
+                reqMsg = (Req) msg;
                 int type = reqMsg.getType();
-                CommonController.get(type).exec(msg, ctx, getSessionId(ctx));
+                CommonController.get(type).exec(msg, ctx, ClientChannelIdUtil.getId(ctx));
             } catch (Exception e) {
                 logger.error("handler reqMsg(" + reqMsg.toJson() + ") error", e);
             } finally {
@@ -119,7 +119,7 @@ public class ServerHandler extends CommonInboundHandler {
         if (evt instanceof IdleStateEvent) {
             fire = false;
             IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
-            String sessionId = getSessionId(ctx);
+            Long sessionId = ClientChannelIdUtil.getId(ctx);
             Session session = sessionService.get(sessionId);
             if (idleStateEvent.state() == IdleState.WRITER_IDLE) {
                 if (session == null) {
@@ -127,7 +127,7 @@ public class ServerHandler extends CommonInboundHandler {
                     logger.info("channel(" + sessionId + ") is write idle overtime, and user haven't login, close it.");
                     return;
                 }
-                writeAndFlush(ctx.channel(), new ReqPingRespMsg());
+                writeAndFlush(ctx.channel(), new ReqPingResp(sessionId));
                 logger.info("channel(" + sessionId + ") is write idle overtime, send a msg to req ping.");
             }
 

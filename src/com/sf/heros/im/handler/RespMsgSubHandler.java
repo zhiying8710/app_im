@@ -3,7 +3,6 @@ package com.sf.heros.im.handler;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,9 +14,11 @@ import org.apache.log4j.Logger;
 
 import redis.clients.jedis.JedisPubSub;
 
+import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.ImUtils;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 
+@Deprecated
 public class RespMsgSubHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(RespMsgSubHandler.class);
@@ -34,11 +35,11 @@ public class RespMsgSubHandler extends CommonInboundHandler {
 
     private class RespMsgSubTask implements Callable<Void> {
 
-        private String sessionId;
+        private Long sessionId;
         private JedisPubSub respMsgSub;
         private final RedisManagerV2 rm = RedisManagerV2.getInstance();
 
-        public RespMsgSubTask(String sessionId, JedisPubSub respMsgSub) {
+        public RespMsgSubTask(Long sessionId, JedisPubSub respMsgSub) {
             super();
             this.sessionId = sessionId;
             this.respMsgSub = respMsgSub;
@@ -62,11 +63,8 @@ public class RespMsgSubHandler extends CommonInboundHandler {
 
         @Override
         public void onMessage(String channel, String message) {
-            try {
-                soChannel.writeAndFlush(ImUtils.getBuf(soChannel.alloc(), message));
-                logger.info("got message(" + message + ") from redis channel " + channel + " and write out.");
-            } catch (UnsupportedEncodingException e) {
-            }
+            soChannel.writeAndFlush(message);
+            logger.info("got message(" + message + ") from redis channel " + channel + " and write out.");
         }
 
         @Override
@@ -108,7 +106,7 @@ public class RespMsgSubHandler extends CommonInboundHandler {
                 if (!inited) {
                     inited = true;
                     respMsgSub = new RespMsgSub(ctx.channel());
-                    subExecutor.submit(new RespMsgSubTask(getSessionId(ctx), respMsgSub));
+                    subExecutor.submit(new RespMsgSubTask(ClientChannelIdUtil.getId(ctx), respMsgSub));
                 }
             } finally {
                 lock.unlock();

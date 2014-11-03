@@ -4,15 +4,15 @@ import com.sf.heros.im.common.bean.Session;
 
 public interface SessionService {
 
-    public boolean add(String id, Session session);
+    public boolean add(Long id, Session session);
 
-    public Session get(String id);
+    public Session get(Long id);
 
-    public void updatePingTime(String id);
+    public void updatePingTime(Long id);
 
-    public void del(String id);
+    public void del(Long id);
 
-    public Session kick(String id);
+    public Session kick(Long id);
 
     public void delAll();
 

@@ -3,20 +3,19 @@ package com.sf.heros.im.req.controller;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.sf.heros.im.common.ImUtils;
+import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.RespMsgPublisher;
 import com.sf.heros.im.common.bean.Session;
-import com.sf.heros.im.common.bean.msg.AskLoginRespMsg;
-import com.sf.heros.im.common.bean.msg.KickedRespMsg;
-import com.sf.heros.im.common.bean.msg.ReqMsg;
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.AskLoginResp;
+import com.sf.heros.im.common.bean.msg.KickedResp;
+import com.sf.heros.im.common.bean.msg.Req;
+import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.service.SessionService;
 
 
@@ -47,7 +46,7 @@ public abstract class CommonController {
         this.sessionService = sessionService;
     }
 
-    public abstract void exec(Object msg, ChannelHandlerContext ctx, String sessionId);
+    public abstract void exec(Object msg, ChannelHandlerContext ctx, Long sessionId);
 
     public void release() {
         logger.info(this.getClass() + " released.");
@@ -71,50 +70,45 @@ public abstract class CommonController {
         return controller;
     }
 
-    protected  final ReqMsg transfer(Object msg) {
-        return (ReqMsg) msg;
+    protected  final Req transfer(Object msg) {
+        return (Req) msg;
     }
 
-    protected final void writeAndFlush(Channel channel, RespMsg respMsg) {
+    protected final void writeAndFlush(Channel channel, Resp respMsg) {
         try {
-            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
+//            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
+            channel.writeAndFlush(respMsg);
             logger.info("write resp msg " + respMsg);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
         }
     }
 
-    protected final void writeAndFlush(ChannelHandlerContext ctx, RespMsg respMsg) {
-        try {
-            ctx.writeAndFlush(ImUtils.getBuf(ctx.alloc(), respMsg));
-            logger.info("write resp msg " + respMsg);
-        } catch (UnsupportedEncodingException e) {
-        }
+    protected final void writeAndFlush(ChannelHandlerContext ctx, Resp respMsg) {
+        writeAndFlush(ctx.channel(), respMsg);
     }
 
-    protected final boolean checkAuth(Object msg, ChannelHandlerContext ctx, String sessionId) {
-        ReqMsg reqMsg = transfer(msg);
-        String reqSessionId = reqMsg.getSid();
+    protected final boolean checkAuth(Object msg, ChannelHandlerContext ctx, Long sessionId) {
+        Req reqMsg = transfer(msg);
+        Long reqSessionId = reqMsg.getSid();
         Session session = null;
 
-        if (reqSessionId != null) {
+        if (reqSessionId != null && reqSessionId.longValue() != Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
             session = sessionService.get(reqSessionId);
             if (reqSessionId.equals(sessionId) && session != null) {
                 if (Session.STATUS_KICKED == session.getStatus()) {
-                    try {
-                        RespMsgPublisher.publish(reqSessionId, new KickedRespMsg());
-                    } catch (Exception e) {
-                        logger.error("publish kicked msg to session(" + reqSessionId + ") user(" + session.getUserId() + ") error", e);
+                    if (!RespMsgPublisher.publish(reqSessionId, new KickedResp(reqSessionId))) {
+                        return false;
                     }
                     logger.info("user(" + session.getUserId() + ") which session(" + reqSessionId + ") is kicked.");
                     return false;
                 }
                 return true;
             } else {
-                writeAndFlush(ctx.channel(), new AskLoginRespMsg());
+                writeAndFlush(ctx.channel(), new AskLoginResp(Const.ProtocolConst.EMPTY_SESSION_ID));
                 return false;
             }
         } else {
-            writeAndFlush(ctx.channel(), new AskLoginRespMsg());
+            writeAndFlush(ctx.channel(), new AskLoginResp(Const.ProtocolConst.EMPTY_SESSION_ID));
             return false;
         }
     }

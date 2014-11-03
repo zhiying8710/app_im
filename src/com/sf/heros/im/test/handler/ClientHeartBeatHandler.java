@@ -9,7 +9,7 @@ import java.util.TimerTask;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.bean.msg.ReqMsg;
+import com.sf.heros.im.common.bean.msg.Req;
 
 public class ClientHeartBeatHandler extends ChannelInboundHandlerAdapter {
 
@@ -17,7 +17,7 @@ public class ClientHeartBeatHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        final ReqMsg msg = new ReqMsg();
+        final Req msg = new Req(null, 0, null);
 //        Map<String, Object> data = new HashMap<String, Object>();
 //        data.put("content", "hahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahahhahahahahahhahahahhahahah");
 //        final HerosMsg msg = new HerosMsg(Const.HEROS_MSG_TYPE_PING, data, new Date().getTime());

@@ -5,36 +5,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 
-import java.io.UnsupportedEncodingException;
-
 import org.apache.log4j.Logger;
 
-import com.sf.heros.im.channel.TcpSocketChannel;
-import com.sf.heros.im.channel.UdtSocketChannel;
-import com.sf.heros.im.common.ImUtils;
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 
 public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = Logger.getLogger(CommonInboundHandler.class);
-
-    protected String getSessionId(ChannelHandlerContext ctx) {
-        return getSessionId(ctx.channel());
-    }
-
-    protected String getSessionId(Channel channel) {
-
-        if (channel instanceof TcpSocketChannel) {
-            return ((TcpSocketChannel)channel).getId();
-        }
-
-        if (channel instanceof UdtSocketChannel) {
-            return ((UdtSocketChannel)channel).getId();
-        }
-
-        return null;
-
-    }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
@@ -55,20 +32,17 @@ public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public void writeAndFlush(Channel channel, RespMsg respMsg) {
+    public void writeAndFlush(Channel channel, Resp respMsg) {
         try {
-            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
+//            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
+            channel.writeAndFlush(respMsg);
             logger.info("write resp msg " + respMsg);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
         }
     }
 
-    public void writeAndFlush(ChannelHandlerContext ctx, RespMsg respMsg) {
-        try {
-            ctx.writeAndFlush(ImUtils.getBuf(ctx.alloc(), respMsg));
-            logger.info("write resp msg " + respMsg);
-        } catch (UnsupportedEncodingException e) {
-        }
+    public void writeAndFlush(ChannelHandlerContext ctx, Resp respMsg) {
+        writeAndFlush(ctx.channel(), respMsg);
     }
 
 }

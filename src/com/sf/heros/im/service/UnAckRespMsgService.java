@@ -1,6 +1,6 @@
 package com.sf.heros.im.service;
 
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 
 public interface UnAckRespMsgService {
 
@@ -8,7 +8,7 @@ public interface UnAckRespMsgService {
 
     public boolean pushToQueue(String unAckMsg);
 
-    public boolean pushToQueue(RespMsg unAckMsg);
+    public boolean pushToQueue(Resp unAckMsg);
 
     public void add(String unAckMsgId);
 

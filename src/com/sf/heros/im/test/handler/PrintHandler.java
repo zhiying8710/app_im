@@ -1,14 +1,16 @@
 package com.sf.heros.im.test.handler;
 
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelHandler.Sharable;
 
-public class PrintHandler extends SimpleChannelInboundHandler<RespMsg> {
+@Sharable
+public class PrintHandler extends SimpleChannelInboundHandler<Resp> {
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, RespMsg msg)
+    protected void channelRead0(ChannelHandlerContext ctx, Resp msg)
             throws Exception {
         System.out.println(msg);
         ctx.fireChannelRead(msg);

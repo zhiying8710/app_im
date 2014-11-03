@@ -15,7 +15,7 @@ public class Session {
     public static final int STATUS_OFFLINE = 1;
     public static final int STATUS_KICKED = 2;
 
-    private String id;
+    private Long id;
 //    private Channel channel;
     private String userId;
     private String token;
@@ -40,7 +40,7 @@ public class Session {
 //        this.token = token;
 //    }
 
-    public Session(String id, String userId, String token,
+    public Session(Long id, String userId, String token,
             long pingTime, int status) {
         super();
         this.id = id;
@@ -50,11 +50,11 @@ public class Session {
         this.token = token;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -140,12 +140,18 @@ public class Session {
 
     @SuppressWarnings("unchecked")
     public void fillFromSerial(Map<String, String> serial) {
-        this.setId(serial.get("id"));
+        if (serial.get("id") != null) {
+            this.setId(new Long(serial.get("id")));
+        }
         this.setUserId(serial.get("userId"));
         this.setToken(serial.get("token"));
         this.setData(Const.CommonConst.GSON.fromJson(serial.get("data"), Map.class));
-        this.setStatus(new Integer(serial.get("status")));
-        this.setPingTime(new Long(serial.get("pingTime")));
+        if (serial.get("status") != null) {
+            this.setStatus(new Integer(serial.get("status")));
+        }
+        if (serial.get("pingTime") != null) {
+            this.setPingTime(new Long(serial.get("pingTime")));
+        }
     }
 
     @Override

@@ -53,6 +53,11 @@
       <!-- <systemPath>/Users/Bingege/.m2/repository/com/barchart/udt/barchart-udt-bundle/2.3.0/barchart-udt-bundle-2.3.0.jar</systemPath> -->
       <systemPath>${basedir}/lib/barchart-udt-bundle-2.3.0.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>0.9.1</version>
+    </dependency>
   </dependencies>
   <build>
     <sourceDirectory>src</sourceDirectory>

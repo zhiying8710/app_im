@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.RespMsgService;
@@ -37,14 +37,14 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     }
 
     @Override
-    public void saveUnAck(String unAckRespMsgId, RespMsg respMsg) {
+    public void saveUnAck(String unAckRespMsgId, Resp respMsg) {
 
         rm.hset(getRespMsgUnAckKey(), unAckRespMsgId, respMsg.toJson());
 
     }
 
     @Override
-    public void saveOffline(String userId, RespMsg respMsg) {
+    public void saveOffline(String userId, Resp respMsg) {
         rm.rpush(getUserOfflineMsgKey(userId), respMsg.toJson());
     }
 
@@ -74,29 +74,29 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     }
 
     @Override
-    public RespMsg getUnAckMsg(String unAckRespMsgId) {
+    public Resp getUnAckMsg(String unAckRespMsgId) {
         try {
             String msg = rm.hget(getRespMsgUnAckKey(), unAckRespMsgId);
             if (StringUtils.isBlank(msg)) {
                 return null;
             }
-            return RespMsg.fromJson(msg, RespMsg.class);
+            return Resp.fromJson(msg, Resp.class);
         } catch (RedisConnException e) {
             return null;
         }
     }
 
     @Override
-    public List<RespMsg> getOfflineMsgs(String userId) {
+    public List<Resp> getOfflineMsgs(String userId) {
 
         try {
             List<String> msgs = rm.lAll(getUserOfflineMsgKey(userId));
             if (msgs == null || msgs.isEmpty()) {
                 return null;
             }
-            List<RespMsg> offlines = new ArrayList<RespMsg>();
+            List<Resp> offlines = new ArrayList<Resp>();
             for (String msg : msgs) {
-                offlines.add(RespMsg.fromJson(msg, RespMsg.class));
+                offlines.add(Resp.fromJson(msg, Resp.class));
             }
             return offlines;
         } catch (RedisConnException e) {

@@ -3,19 +3,18 @@ import java.security.MessageDigest;
 
 public class MD5Util {
 //        private final static String SALT = "zhiying8710@hotmail.com";
-        private final static StringBuffer sb = new StringBuffer();
+//        private final static StringBuffer sb = new StringBuffer();
         private final static String[] hexDigits = {"0", "1", "2", "3", "4",
             "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
 
         public static String encodeByMD5(String originString, String salt) {
             if (originString != null) {
                 try{
+                    StringBuffer sb = new StringBuffer();
                     MessageDigest md = MessageDigest.getInstance("MD5");
                     sb.append(salt).append(originString);
                     byte[] results = md.digest(sb.toString().getBytes());
-                    String resultString = byteArrayToHexString(results);
-                    sb.delete(0, sb.length());
-                    return resultString;
+                    return byteArrayToHexString(results);
                 } catch(Exception ex) {
                     ex.printStackTrace();
                 }
@@ -43,11 +42,11 @@ public class MD5Util {
         public static String encodeByMD5WithoutSalt(String originString) {
              if (originString != null) {
                     try{
+                        StringBuffer sb = new StringBuffer();
                         MessageDigest md = MessageDigest.getInstance("MD5");
                         sb.append(originString);
                         byte[] results = md.digest(sb.toString().getBytes());
                         String resultString = byteArrayToHexString(results);
-                        sb.delete(0, sb.length());
                         return resultString;
                     } catch(Exception ex) {
                         ex.printStackTrace();

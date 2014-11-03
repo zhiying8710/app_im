@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-public class TcpServerSocketChannel extends NioServerSocketChannel {
+public class TcpServerSocketChannel extends NioServerSocketChannel implements ServerChannel {
 
     private static final Logger logger = Logger.getLogger(TcpServerSocketChannel.class);
 

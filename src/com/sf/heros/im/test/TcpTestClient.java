@@ -24,7 +24,7 @@ public class TcpTestClient {
         try {
 
             Bootstrap client = new Bootstrap();
-            client.channel(NioSocketChannel.class).group(workerGroup).option(ChannelOption.SO_KEEPALIVE, true).handler(new ChannelInitializer<SocketChannel>() {
+            client.channel(NioSocketChannel.class).group(workerGroup).option(ChannelOption.SO_SNDBUF,1048576).option(ChannelOption.SO_RCVBUF, 1048576).option(ChannelOption.SO_KEEPALIVE, true).handler(new ChannelInitializer<SocketChannel>() {
 
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {

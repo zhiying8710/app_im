@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.RespMsgPublisher;
 import com.sf.heros.im.common.bean.Session;
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
@@ -52,32 +52,35 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
                             } catch (InterruptedException e) {
                             }
                         }
-                        RespMsg respMsg = RespMsg.fromJson(unAckRespMsg, RespMsg.class);
-                        String toUserId = respMsg.getFromData(Const.RespMsgConst.DATA_KEY_TO_USER_ID, "null").toString();
-                        String sessionId = ReSendUnAckRespMsgHandler.this.userStatusService.getSessionId(toUserId);
-                        String unAckMsgId = respMsg.getUnAckMsgId();
-                        synchronized (unAckMsgId) {
-                            String unAck = ReSendUnAckRespMsgHandler.this.respMsgService.getUnAck(unAckMsgId);
+                        Resp respMsg = Resp.fromJson(unAckRespMsg, Resp.class);
+                        String toUserId = respMsg.getFromData(Const.RespConst.DATA_KEY_TO_USER_ID, "null").toString();
+                        Long sessionId = ReSendUnAckRespMsgHandler.this.userStatusService.getSessionId(toUserId);
+                        String msgNo = respMsg.getMsgNo();
+                        synchronized (msgNo) {
+                            String unAck = ReSendUnAckRespMsgHandler.this.respMsgService.getUnAck(msgNo);
                             if (unAck == null) {
                                 continue;
                             }
-                            if (sessionId != null) {
+                            if (sessionId != null && sessionId.longValue() != Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
                                 Session session = ReSendUnAckRespMsgHandler.this.sessionService.get(sessionId);
                                 if (session == null) {
                                     ReSendUnAckRespMsgHandler.this.userStatusService.userOffline(toUserId);
                                     ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
                                 } else {
-                                    try {
-                                        RespMsgPublisher.publish(sessionId, respMsg);
-                                    } catch (Exception e) {
-                                        logger.error("publish resp msg error", e);
+                                    if (RespMsgPublisher.publish(sessionId, respMsg)) {
+                                        ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(msgNo);
+                                        logger.info("resend msg " + unAck + " and re-wheel.");
+                                    } else {
+                                        ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
                                     }
-                                    ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(unAckMsgId);
-                                    logger.info("resend msg " + unAck + " and re-wheel.");
                                 }
                             } else {
                                 ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
                             }
+                        }
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(0);
+                        } catch (InterruptedException e) {
                         }
                     }
                 }

@@ -1,11 +1,46 @@
 package com.sf.heros.im.common;
 
+
+import java.util.Random;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.sf.heros.im.common.exception.ProtocolException;
 
 public class Const {
 
-    public interface ReqMsgConst {
+    public interface ProtocolConst {
+
+        public static final int SESSION_ID_FLAG_BYTES = 8;
+        public static final int MSG_TYPE_FLAG_BYTES = 4;
+        public static final int MSG_BODY_FLAG_BYTES = 4;
+        public static final int MSG_BODY_MAX_BYTES = 10240;
+
+        public static final String DEFAULT_CHARSET = "utf-8";
+
+        public static final Long EMPTY_SESSION_ID = 0L;
+
+        enum FlagType {
+            BYTE, SHORT, INT, LONG;
+            public int len() {
+                if (this == BYTE) {
+                    return 1;
+                }
+                if (this == SHORT) {
+                    return 2;
+                }
+                if (this == INT) {
+                    return 4;
+                }
+                if (this == LONG) {
+                    return 8;
+                }
+                throw new ProtocolException("unsupport flag type.");
+            }
+        }
+    }
+
+    public interface ReqConst {
 
         public static final int TYPE_PING = 0;
         public static final int TYPE_STRING_MSG = 1;
@@ -18,22 +53,23 @@ public class Const {
         public static final String DATA_TO_USERID = "to";
         public static final String DATA_FROM_USERID = "from";
         public static final String DATA_CONTENT = "content";
+        public static final String DATA_MSG_NO = "msg_no";
 
         public static final String DATA_AUTH_USERID = "userId";
         public static final String DATA_AUTH_TOKEN = "token";
 
+        public static final String TIME = "time";
     }
 
-    public interface ReqAckMsgConst {
+    public interface ReqAckConst {
 
         public static final String DATA_SRC_FROM_USERID = "src_from";
         public static final String DATA_SRC_TO_USERID = "src_to";
-        public static final String DATA_SRC_FROM_TIME = "src_time";
-        public static final String DATA_SRC_TYPE = "src_type";
+        public static final String DATA_SRC_MSG_NO = "src_msg_no";
 
     }
 
-    public interface RespMsgConst {
+    public interface RespConst {
 
         public static final int TYPE_STRING_MSG = 1;
         public static final int TYPE_VOICE_MSG = 2;
@@ -45,22 +81,22 @@ public class Const {
         public static final int TYPE_OFFLINE_MSG = 10;
         public static final int TYPE_ASK_LOGIN = 11;
         public static final int TYPE_LOGIN = 12;
+        public static final int TYPE_MSG_TOO_LONG = 13;
 
         public static final String DATA_KEY_CONTENT = "content";
         public static final String DATA_KEY_FROM_USER_ID = "from";
         public static final String DATA_KEY_FROM_USER_INFO = "from_info";
         public static final String DATA_KEY_OFFLINE_MSGS = "offline_msgs";
         public static final String DATA_KEY_TO_USER_ID = "to";
-        public static final String DATA_KEY_LOGIN_SESSIONID = "sid";
+        public static final String DATA_KEY_MSG_NO = "msg_no";
     }
 
-    public interface RespAckMsgConst {
+    public interface RespAckConst {
 
         public static final String DATA_SRC_TO_USERID = "src_to";
         public static final String DATA_SRC_FROM_USERID = "src_from";
-        public static final String DATA_SRC_TIME = "src_time";
+        public static final String DATA_SRC_MSG_NO = "src_msg_no";
         public static final String DATA_KEY_REMARK = "remark";
-        public static final String DATA_SRC_TYPE = "src_type";
 
     }
 
@@ -76,6 +112,7 @@ public class Const {
         public static final String HANDLER_RE_SEND_UN_ACK_NAME = "reSendUnAck";
         public static final String HANDLER_RESP_MSG_SUB_NAME = "respMsgSub";
         public static final String HANDLER_LOGIC_EVENT_NAME = "loginEvent";
+        public static final String HANDLER_RESP_ENCODER_NAME = "respEncoder";
 
     }
 
@@ -107,6 +144,13 @@ public class Const {
         public static final String WORKER_GROUP_THREADS = "im.server.worker.threads";
         public static final String SERVER_SOCKET_BACKLOG_COUNT = "im.server.socket.backlog.count";
         public static final String BOSS_GROUP_THREADS = "im.server.boss.threads";
+
+        public static final String SERVER_NAME = "im.server.name";
+
+        public static final String CHANNEL_ID_THRIFT_HOST = "im.channel.id.thrift.host";
+        public static final String CHANNEL_ID_THRIFT_PORT = "im.channel.id.thrift.port";
+        public static final String CHANNEL_ID_THRIFT_USRAGENT = "im.channel.id.thrift.usragent";
+        public static final String IM_COUNTER_THRIFT_SERVER_PORT = "im.counter.thrift.server.port";
     }
 
     public interface RedisConst {
@@ -153,6 +197,8 @@ public class Const {
         public static final String KEY_SEP = "_";
         public static final int OFFLINE_MSG_SEND_PER_SIZE = 20;
         public static final String SERVER_USER_ID = "server";
+        public static final int SESSION_TIMEOUT_SECS = 60 * 30;
+        public static final Random RANDOM = new Random(10);
     }
 
 }

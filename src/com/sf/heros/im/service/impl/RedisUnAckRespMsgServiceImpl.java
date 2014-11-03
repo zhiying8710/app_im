@@ -3,7 +3,7 @@ package com.sf.heros.im.service.impl;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.bean.msg.RespMsg;
+import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.UnAckRespMsgService;
@@ -52,7 +52,7 @@ public class RedisUnAckRespMsgServiceImpl implements
     }
 
     @Override
-    public boolean pushToQueue(RespMsg unAckMsg) {
+    public boolean pushToQueue(Resp unAckMsg) {
         return pushToQueue(unAckMsg.toJson());
     }
 

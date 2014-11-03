@@ -14,8 +14,9 @@ public class PingController extends CommonController {
     }
 
     @Override
-    public void exec(Object msg, ChannelHandlerContext ctx, String sessionId) {
+    public void exec(Object msg, ChannelHandlerContext ctx, Long sessionId) {
         sessionService.updatePingTime(sessionId);
+
     }
 
 }

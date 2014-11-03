@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.barchart.udt.nio.SocketChannelUDT;
 
-public class UdtServerSocketChannel extends NioUdtByteAcceptorChannel {
+public class UdtServerSocketChannel extends NioUdtByteAcceptorChannel implements ServerChannel {
 
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {
