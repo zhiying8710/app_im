@@ -934,18 +934,17 @@ public class RedisManagerV2 {
         }
     }
 
-    public boolean hincrby(String key, String field, int increment) {
+    public long hincrby(String key, String field, int increment) throws RedisConnException {
         Jedis j = null;
         boolean borrowOrOprSuccess = true;
         try {
             j = this.connect();
-            j.hincrBy(key, field, increment);
-            return true;
+            return j.hincrBy(key, field, increment);
         } catch (Exception e) {
             e.printStackTrace();
             borrowOrOprSuccess = false;
             this.returnBrokenResource(j);
-            return false;
+            throw new RedisConnException("redis command: hincrby " + key + " " + field + " " + increment + ", cause: " + e.getMessage());
         } finally {
             if (borrowOrOprSuccess) {
                 this.disConnected(j);
@@ -1103,6 +1102,42 @@ public class RedisManagerV2 {
             return true;
         } catch (Exception e) {
             e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            return false;
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+    }
+
+    @SuppressWarnings("resource")
+    public boolean pipeline(List<RedisCmdPair> cmdPairs) {
+        Jedis j = null;
+        Pipeline pipeline = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            pipeline = j.pipelined();
+            pipeline.multi();
+            for (RedisCmdPair cmdPair : cmdPairs) {
+                String cmd = cmdPair.getCmd();
+
+                Object[] oArgs = cmdPair.getoArgs();
+                try {
+                    MethodUtils.invokeMethod(pipeline, cmd, oArgs);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            pipeline.exec();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (pipeline != null) {
+                pipeline.discard();
+            }
             borrowOrOprSuccess = false;
             this.returnBrokenResource(j);
             return false;

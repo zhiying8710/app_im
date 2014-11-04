@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.ScanResult;
 
@@ -37,23 +38,55 @@ public class RedisSessionServiceImpl implements SessionService {
         }
         String key = getKey(id);
 
-        Pipeline pipeline = rm.pipeline();
-        if (pipeline == null) {
-            throw new NullPointerException("can not get redis pipeline.");
+//        Map<String, Object> serial = session.serialToMap();
+//        List<RedisCmdPair> cmdPairs = new ArrayList<RedisCmdPair>();
+//        for (Entry<String, Object> serialEntry : serial.entrySet()) {
+//            cmdPairs.add(new RedisCmdPair("hset", new Object[]{key, serialEntry.getKey(), serialEntry.getValue().toString()}));
+//        }
+//        cmdPairs.add(new RedisCmdPair("expire", new Object[]{key, Const.CommonConst.SESSION_TIMEOUT_SECS}));
+//        return rm.pipeline(cmdPairs);
+
+//        Pipeline pipeline = rm.pipeline();
+//        if (pipeline == null) {
+//            throw new NullPointerException("can not get redis pipeline.");
+//        }
+//        Map<String, Object> serial = session.serialToMap();
+//        for (Entry<String, Object> serialEntry : serial.entrySet()) {
+//            pipeline.hset(key, serialEntry.getKey(), serialEntry.getValue().toString());
+//        }
+//        pipeline.expire(key, Const.CommonConst.SESSION_TIMEOUT_SECS);
+//        pipeline.multi();
+//        try {
+//            pipeline.exec();
+//        } catch (Exception e) {
+//            logger.error("pipeline exec error.", e);
+//            pipeline.discard();
+//        }
+//        return true;
+
+        class AddSessionDeal implements DealWithSession {
+
+            private String key;
+            private Session session;
+
+            public AddSessionDeal(String key, Session session) {
+                super();
+                this.key = key;
+                this.session = session;
+            }
+
+            @Override
+            public void deal(Pipeline pipeline) {
+                Map<String, Object> serial = session.serialToMap();
+                for (Entry<String, Object> serialEntry : serial.entrySet()) {
+                    pipeline.hset(key, serialEntry.getKey(), serialEntry.getValue().toString());
+                }
+                pipeline.expire(key, Const.CommonConst.SESSION_TIMEOUT_SECS);
+            }
+
         }
-        Map<String, Object> serial = session.serialToMap();
-        for (Entry<String, Object> serialEntry : serial.entrySet()) {
-            pipeline.hset(key, serialEntry.getKey(), serialEntry.getValue().toString());
-        }
-        pipeline.expire(key, Const.CommonConst.SESSION_TIMEOUT_SECS);
-        pipeline.multi();
-        try {
-            pipeline.exec();
-        } catch (Exception e) {
-            logger.error("pipeline exec error.", e);
-            pipeline.discard();
-        }
-        return true;
+        return dealWithSession(new AddSessionDeal(key, session));
+
     }
 
     @Override
@@ -91,18 +124,77 @@ public class RedisSessionServiceImpl implements SessionService {
             return;
         }
         String key = getKey(id);
-        Pipeline pipeline = rm.pipeline();
-        if (pipeline == null) {
-            throw new NullPointerException("can not get redis pipeline.");
+
+//        List<RedisCmdPair> cmdPairs = new ArrayList<RedisCmdPair>();
+//        cmdPairs.add(new RedisCmdPair("hset", new Object[]{key, "pingTime", new Date().getTime() + ""}));
+//        cmdPairs.add(new RedisCmdPair("expire", new Object[]{key, Const.CommonConst.SESSION_TIMEOUT_SECS}));
+//        rm.pipeline(cmdPairs);
+
+
+
+//        Pipeline pipeline = rm.pipeline();
+//        if (pipeline == null) {
+//            throw new NullPointerException("can not get redis pipeline.");
+//        }
+//        pipeline.multi();
+//        pipeline.hset(key, "pingTime", new Date().getTime() + "");
+//        pipeline.expire(key, Const.CommonConst.SESSION_TIMEOUT_SECS);
+//        try {
+//            pipeline.exec();
+//        } catch (Exception e) {
+//            logger.error("pipeline exec error.", e);
+//            pipeline.discard();
+//        }
+
+        class UpdatePingTimeDeal implements DealWithSession {
+
+            private String key;
+
+            public UpdatePingTimeDeal(String key) {
+                super();
+                this.key = key;
+            }
+
+            @Override
+            public void deal(Pipeline pipeline) {
+                pipeline.hset(key, "pingTime", new Date().getTime() + "");
+                pipeline.expire(key, Const.CommonConst.SESSION_TIMEOUT_SECS);
+            }
+
         }
-        pipeline.hset(key, "pingTime", new Date().getTime() + "");
-        pipeline.expire(key, Const.CommonConst.SESSION_TIMEOUT_SECS);
-        pipeline.multi();
+
+        dealWithSession(new UpdatePingTimeDeal(key));
+    }
+
+    interface DealWithSession {
+
+        public void deal(Pipeline pipeline);
+
+    }
+
+    private boolean dealWithSession(DealWithSession dealWithSession) {
+        Jedis j = null;
+        Pipeline pipeline = null;
+        boolean borrowOrOprSuccess = true;
         try {
+            j = rm.connect();
+            pipeline = j.pipelined();
+            pipeline.multi();
+            dealWithSession.deal(pipeline);
             pipeline.exec();
+            return true;
         } catch (Exception e) {
-            logger.error("pipeline exec error.", e);
-            pipeline.discard();
+            e.printStackTrace();
+            if (pipeline != null) {
+                pipeline.discard();
+            }
+            borrowOrOprSuccess = false;
+            rm.returnBrokenResource(j);
+            return false;
+        } finally {
+            if (borrowOrOprSuccess) {
+                rm.disConnected(j);
+            }
         }
     }
 

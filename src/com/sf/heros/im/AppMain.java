@@ -24,6 +24,7 @@ import com.sf.heros.im.channel.TcpServerSocketChannel;
 import com.sf.heros.im.channel.UdtServerSocketChannel;
 import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.Counter;
 import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.handler.FinalHandler;
@@ -57,6 +58,7 @@ public class AppMain {
     private static final Logger logger = Logger.getLogger(AppMain.class);
 
     public AppMain() {
+
         init();
 
         String servType = PropsLoader.get(Const.PropsConst.SERVER_TYPE, Const.PropsConst.SERVER_TYPE_DEAFULT);
@@ -102,6 +104,10 @@ public class AppMain {
             ClientChannelIdUtil.useLocalIdWorker();
         }
         RedisManagerV2.getInstance();
+
+        Counter.ConnsCounter.INSTANCE.init();
+        Counter.OnlinesCounter.INSTANCE.init();
+
         Executors.newSingleThreadExecutor().submit(new Runnable() {
 
             @Override

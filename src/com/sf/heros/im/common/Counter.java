@@ -1,5 +1,11 @@
 package com.sf.heros.im.common;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.commons.lang3.StringUtils;
 
 import com.sf.heros.im.common.redis.RedisConnException;
@@ -15,11 +21,19 @@ public interface Counter {
 
     public void init();
 
-    static class RedisAbstractCounter implements Counter {
+    static abstract class RedisAbstractCounter implements Counter {
 
         private static final RedisManagerV2 rm = RedisManagerV2.getInstance();
         private String key;
+        private static String slot;
 
+        static {
+            try {
+                slot = PropsLoader.get(Const.PropsConst.SERVER_NAME, InetAddress.getLocalHost().getHostName());
+            } catch (UnknownHostException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
 
         public RedisAbstractCounter(String key) {
             this.key = key;
@@ -28,7 +42,7 @@ public interface Counter {
         @Override
         public long incrAndGet() {
             try {
-                return rm.incr(key);
+                return rm.hincrby(key, slot, 1);
             } catch (RedisConnException e) {
                 return -1;
             }
@@ -36,29 +50,35 @@ public interface Counter {
         @Override
         public long decrAndGet() {
             try {
-                return rm.decr(key);
+                return rm.hincrby(key, slot, -1);
             } catch (RedisConnException e) {
                 return -1;
             }
         }
         @Override
         public long get() {
-            String val = null;
+            long total = 0;
             try {
-                val = rm.get(key);
+                Map<String, String> counts = rm.hgetAll(key);
+                Set<Entry<String, String>> countEntries = counts.entrySet();
+                for (Entry<String, String> countEntry : countEntries) {
+                    String val = countEntry.getValue();
+                    if (StringUtils.isNotBlank(val)) {
+                        long count = Long.valueOf(val);
+                        if (count > 0) {
+                            total += count;
+                        }
+                    }
+                }
+                return total;
             } catch (RedisConnException e) {
                 return -1;
-            }
-            if (StringUtils.isNotBlank(val)) {
-                return Long.valueOf(val);
-            } else {
-                return 0;
             }
         }
 
         @Override
         public void init() {
-            rm.del(key);
+            rm.hdel(key, slot);
         }
 
     }
