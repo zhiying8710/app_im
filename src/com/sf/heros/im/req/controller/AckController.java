@@ -20,7 +20,7 @@ public class AckController extends CommonController {
 
     public AckController(SessionService sessionService,
             RespMsgService respMsgService, UnAckRespMsgService unAckRespMsgService) {
-        super(sessionService);
+        super(sessionService, null);
         this.sessionService = sessionService;
         this.respMsgService = respMsgService;
         this.unAckRespMsgService = unAckRespMsgService;
@@ -36,6 +36,7 @@ public class AckController extends CommonController {
         synchronized (msgNo) {
             unAckRespMsgService.remove(msgNo);
             respMsgService.delUnAck(msgNo);
+            respMsgService.delOffline(sessionService.get(sessionId).getUserId(), msgNo);
             logger.info("remove unack resp msg for " + msgNo);
         }
     }

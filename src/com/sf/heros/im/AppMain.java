@@ -26,6 +26,7 @@ import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.Counter;
 import com.sf.heros.im.common.PropsLoader;
+import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.handler.FinalHandler;
 import com.sf.heros.im.handler.ReSendUnAckRespMsgHandler;
@@ -154,6 +155,8 @@ public class AppMain {
             final ServerHandler serverHandler = new ServerHandler(authService, sessionService, userStatusService, userInfoService, respMsgService, unAckRespMsgService);
 
 //            final PrintHandler printHandler = new PrintHandler();
+
+            RespPublisher.init(sessionService, userStatusService);
 
             server.childHandler(new ChannelInitializer<Channel>() {
 

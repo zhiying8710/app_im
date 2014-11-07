@@ -20,4 +20,5 @@ public interface RespMsgService {
 
     public void delUnAck(String unAckMsgIdFromAck);
 
+    public void delOffline(String userId, String msgNo);
 }

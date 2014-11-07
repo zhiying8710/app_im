@@ -9,14 +9,16 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.sf.heros.im.channel.listener.WriteAndFlushFailureListener;
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.RespMsgPublisher;
+import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.msg.AskLoginResp;
 import com.sf.heros.im.common.bean.msg.KickedResp;
 import com.sf.heros.im.common.bean.msg.Req;
 import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.service.SessionService;
+import com.sf.heros.im.service.UserStatusService;
 
 
 public abstract class CommonController {
@@ -26,6 +28,7 @@ public abstract class CommonController {
     private static final Map<Integer, CommonController> CONTROLLERS = new HashMap<Integer, CommonController>();
 
     private SessionService sessionService;
+    private UserStatusService userStatusService;
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -42,8 +45,9 @@ public abstract class CommonController {
         }));
     }
 
-    public CommonController(SessionService sessionService) {
+    public CommonController(SessionService sessionService, UserStatusService userStatusService) {
         this.sessionService = sessionService;
+        this.userStatusService = userStatusService;
     }
 
     public abstract void exec(Object msg, ChannelHandlerContext ctx, Long sessionId);
@@ -77,7 +81,7 @@ public abstract class CommonController {
     protected final void writeAndFlush(Channel channel, Resp respMsg) {
         try {
 //            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
-            channel.writeAndFlush(respMsg);
+            channel.writeAndFlush(respMsg).addListener(new WriteAndFlushFailureListener(sessionService, userStatusService));
             logger.info("write resp msg " + respMsg);
         } catch (Exception e) {
         }
@@ -96,7 +100,7 @@ public abstract class CommonController {
             session = sessionService.get(reqSessionId);
             if (reqSessionId.equals(sessionId) && session != null) {
                 if (Session.STATUS_KICKED == session.getStatus()) {
-                    if (!RespMsgPublisher.publish(reqSessionId, new KickedResp(reqSessionId))) {
+                    if (!RespPublisher.publish(reqSessionId, new KickedResp(reqSessionId))) {
                         return false;
                     }
                     logger.info("user(" + session.getUserId() + ") which session(" + reqSessionId + ") is kicked.");
@@ -104,11 +108,11 @@ public abstract class CommonController {
                 }
                 return true;
             } else {
-                writeAndFlush(ctx.channel(), new AskLoginResp(Const.ProtocolConst.EMPTY_SESSION_ID));
+                writeAndFlush(ctx.channel(), new AskLoginResp());
                 return false;
             }
         } else {
-            writeAndFlush(ctx.channel(), new AskLoginResp(Const.ProtocolConst.EMPTY_SESSION_ID));
+            writeAndFlush(ctx.channel(), new AskLoginResp());
             return false;
         }
     }

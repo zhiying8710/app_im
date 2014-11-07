@@ -82,6 +82,7 @@ public class Const {
         public static final int TYPE_ASK_LOGIN = 11;
         public static final int TYPE_LOGIN = 12;
         public static final int TYPE_MSG_TOO_LONG = 13;
+        public static final int TYPE_AUTH_ERR = 14;
 
         public static final String DATA_KEY_CONTENT = "content";
         public static final String DATA_KEY_FROM_USER_ID = "from";
@@ -151,6 +152,8 @@ public class Const {
         public static final String CHANNEL_ID_THRIFT_PORT = "im.channel.id.thrift.port";
         public static final String CHANNEL_ID_THRIFT_USRAGENT = "im.channel.id.thrift.usragent";
         public static final String IM_COUNTER_THRIFT_SERVER_PORT = "im.counter.thrift.server.port";
+        public static final String UNACKMSG_RESEND_COUNT = "im.unackmsg.resend.count";
+
     }
 
     public interface RedisConst {
@@ -179,6 +182,7 @@ public class Const {
         public static final String RESP_MSG_SUB_KEY_PREFIX = "__resp_msg_sub_";
         public static final String SESSION_KEY_PREFIX = "__session_";
         public static final String RESP_MSG_UNACK_RESEND_KEY = "__resp_msg_unack_resend";
+		public static final String UNACKMSG_RESEND_COUNT_KEY = "__unackmsg_resend_count";
     }
 
     public interface UserConst {

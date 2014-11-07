@@ -10,6 +10,10 @@ public class FinalHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(FinalHandler.class);
 
+    public FinalHandler() {
+    	super(null, null);
+	}
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {

@@ -3,7 +3,7 @@ package com.sf.heros.im.req.controller;
 import io.netty.channel.ChannelHandlerContext;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.RespMsgPublisher;
+import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.UserInfo;
 import com.sf.heros.im.common.bean.msg.AckResp;
@@ -28,7 +28,7 @@ public class ChatController extends CommonController {
     public ChatController(UserStatusService userStatusService, SessionService sessionService,
             RespMsgService respMsgService,
             UnAckRespMsgService unAckRespMsgService, UserInfoService userInfoService) {
-        super(sessionService);
+        super(sessionService, userStatusService);
 
         this.sessionService = sessionService;
         this.userInfoService = userInfoService;
@@ -81,7 +81,7 @@ public class ChatController extends CommonController {
             String msgNo = respMsg.getMsgNo();
             respMsgService.saveUnAck(respMsg.getMsgNo(), respMsg);
             unAckRespMsgService.add(msgNo);
-            online = RespMsgPublisher.publish(toSessionId, respMsg);
+            online = RespPublisher.publish(toSessionId, respMsg);
         }
         if (!online) {
             userStatusService.userOffline(to);

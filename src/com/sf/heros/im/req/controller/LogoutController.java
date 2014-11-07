@@ -12,7 +12,7 @@ public class LogoutController extends CommonController {
     private SessionService sessionService;
 
     public LogoutController(UserStatusService userStatusService, SessionService sessionService) {
-        super(sessionService);
+        super(sessionService, userStatusService);
         this.userStatusService = userStatusService;
         this.sessionService = sessionService;
     }

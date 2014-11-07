@@ -2,27 +2,29 @@ package com.sf.heros.im.common;
 
 import com.sf.heros.im.channel.ClientChannel;
 import com.sf.heros.im.channel.ClientChannelGroup;
+import com.sf.heros.im.channel.listener.WriteAndFlushFailureListener;
 import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
+import com.sf.heros.im.service.SessionService;
+import com.sf.heros.im.service.UserStatusService;
 
-public class RespMsgPublisher {
+public class RespPublisher {
 
-    public static boolean publish(Long sessionId, String msg) {
+	private static SessionService sessionServ;
+	private static UserStatusService userStatusServ;
+
+	public static void init(SessionService sessionService, UserStatusService userStatusService) {
+		sessionServ = sessionService;
+		userStatusServ = userStatusService;
+	}
+
+    public static boolean publish(Long sessionId, Object msg) {
         ClientChannel channel = ClientChannelGroup.get(sessionId);
         if (channel == null) {
             return false;
         }
-        channel.writeAndFlush(msg);
-        return true;
-    }
-
-    public static boolean publish(Long sessionId, Resp msg) {
-        ClientChannel channel = ClientChannelGroup.get(sessionId);
-        if (channel == null) {
-            return false;
-        }
-        channel.writeAndFlush(msg);
+        channel.writeAndFlush(msg).addListener(new WriteAndFlushFailureListener(sessionServ, userStatusServ));
         return true;
     }
 

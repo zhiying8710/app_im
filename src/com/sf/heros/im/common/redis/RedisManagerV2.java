@@ -1166,4 +1166,22 @@ public class RedisManagerV2 {
         }
     }
 
+	public List<String> hvals(String key) {
+		Jedis j = null;
+        boolean borrowOrOprSuccess = true;
+        try {
+            j = this.connect();
+            return j.hvals(key);
+        } catch (Exception e) {
+            e.printStackTrace();
+            borrowOrOprSuccess = false;
+            this.returnBrokenResource(j);
+            return null;
+        } finally {
+            if (borrowOrOprSuccess) {
+                this.disConnected(j);
+            }
+        }
+	}
+
 }

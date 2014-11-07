@@ -9,7 +9,7 @@ public class PingController extends CommonController {
     private SessionService sessionService;
 
     public PingController(SessionService sessionService) {
-        super(sessionService);
+        super(null, null);
         this.sessionService = sessionService;
     }
 

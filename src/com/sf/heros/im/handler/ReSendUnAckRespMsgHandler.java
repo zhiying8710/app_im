@@ -9,9 +9,12 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.RespMsgPublisher;
+import com.sf.heros.im.common.PropsLoader;
+import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.msg.Resp;
+import com.sf.heros.im.common.redis.RedisConnException;
+import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.RespMsgService;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UnAckRespMsgService;
@@ -22,6 +25,10 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(ReSendUnAckRespMsgHandler.class);
 
+    private static final int UNACKMSG_MAX_COUNT = PropsLoader.get(Const.PropsConst.UNACKMSG_RESEND_COUNT, 2);
+
+    private final RedisManagerV2 rm = RedisManagerV2.getInstance();
+
     private SessionService sessionService;
     private UserStatusService userStatusService;
     private RespMsgService respMsgService;
@@ -30,7 +37,7 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
 
     public ReSendUnAckRespMsgHandler(SessionService sessionService,
             UserStatusService userStatusService, RespMsgService respMsgService, UnAckRespMsgService unAckRespMsgService, int poolSize) {
-        super();
+        super(sessionService, userStatusService);
         this.sessionService = sessionService;
         this.userStatusService = userStatusService;
         this.respMsgService = respMsgService;
@@ -57,26 +64,40 @@ public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
                         Long sessionId = ReSendUnAckRespMsgHandler.this.userStatusService.getSessionId(toUserId);
                         String msgNo = respMsg.getMsgNo();
                         synchronized (msgNo) {
+                        	try {
+								if (rm.hincrby(Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, msgNo, 0) > UNACKMSG_MAX_COUNT) {
+									logger.error("msg " + msgNo + " to user " + toUserId + " has sent more than " + UNACKMSG_MAX_COUNT + "time, so just discrad it.");
+									ReSendUnAckRespMsgHandler.this.respMsgService.delOffline(toUserId, msgNo);
+									continue;
+								}
+							} catch (RedisConnException e) {
+							}
                             String unAck = ReSendUnAckRespMsgHandler.this.respMsgService.getUnAck(msgNo);
                             if (unAck == null) {
                                 continue;
                             }
-                            if (sessionId != null && sessionId.longValue() != Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
-                                Session session = ReSendUnAckRespMsgHandler.this.sessionService.get(sessionId);
-                                if (session == null) {
-                                    ReSendUnAckRespMsgHandler.this.userStatusService.userOffline(toUserId);
-                                    ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
-                                } else {
-                                    if (RespMsgPublisher.publish(sessionId, respMsg)) {
-                                        ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(msgNo);
-                                        logger.info("resend msg " + unAck + " and re-wheel.");
-                                    } else {
-                                        ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
-                                    }
-                                }
-                            } else {
+                            if (sessionId == null || sessionId.longValue() == Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
+                            	ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
+                            	continue;
+
+							}
+                            Session session = ReSendUnAckRespMsgHandler.this.sessionService.get(sessionId);
+                            if (session == null) {
+                                ReSendUnAckRespMsgHandler.this.userStatusService.userOffline(toUserId);
                                 ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
+                                continue;
                             }
+                            boolean r = RespPublisher.publish(sessionId, respMsg);
+                            if (!r) {
+                            	ReSendUnAckRespMsgHandler.this.respMsgService.saveOffline(toUserId, respMsg);
+                            	continue;
+							}
+                            ReSendUnAckRespMsgHandler.this.unAckRespMsgService.add(msgNo);
+                            try {
+								rm.hincrby(Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, msgNo, 1);
+							} catch (RedisConnException e) {
+							}
+                            logger.info("resend msg " + unAck + " and re-wheel.");
                         }
                         try {
                             TimeUnit.MILLISECONDS.sleep(0);
