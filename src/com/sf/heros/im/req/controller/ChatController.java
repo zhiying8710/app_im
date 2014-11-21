@@ -1,7 +1,6 @@
 package com.sf.heros.im.req.controller;
 
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.UserInfo;
@@ -16,8 +15,6 @@ import com.sf.heros.im.service.UserInfoService;
 import com.sf.heros.im.service.UserStatusService;
 
 public class ChatController extends CommonController {
-
-    private static final String SERVER_ID = PropsLoader.get(Const.PropsConst.SERVER_ID);
 
     private UserStatusService userStatusService;
     private SessionService sessionService;
@@ -67,13 +64,13 @@ public class ChatController extends CommonController {
         if (respMsg != null) {
             boolean online = userStatusService.isOnline(to);
             Long toSessionId = userStatusService.getSessionId(to);
-
+            Session toSession = null;
             if (online) {
                 if (toSessionId == null) {
                     online = false;
                 } else {
-                    Session session = sessionService.get(toSessionId);
-                    if (session == null || session.getStatus() == Session.STATUS_OFFLINE) {
+                    toSession = sessionService.get(toSessionId);
+                    if (toSession == null || toSession.getStatus() == Session.STATUS_OFFLINE) {
                         online = false;
                     }
                 }
@@ -82,7 +79,7 @@ public class ChatController extends CommonController {
                 String msgNo = respMsg.getMsgNo();
                 respMsgService.saveUnAck(respMsg.getMsgNo(), respMsg);
                 unAckRespMsgService.add(msgNo);
-                RespPublisher.publish(toSessionId, SERVER_ID, respMsg);
+                RespPublisher.publish(toSessionId, toSession.getServerId(), respMsg);
             } else {
                 respMsgService.saveOffline(to, respMsg);
             }

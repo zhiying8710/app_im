@@ -43,6 +43,8 @@ netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json �
 <p>im.channel.id.thrift.usragent=im // Snowflake 校验的 useragent</p>
 <p>im.counter.thrift.server.port=19000 // channel 数和 online 数的计数器的 thrift 服务端口</p>
 <p>im.unackmsg.resend.count=3 // 未收到回执的消息的重发次数</p>
+<p>im.mq.host=127.0.0.1 // mq 的 ip</p>
+<p>im.mq.port=5672 // mq 的端口</p>
 <br/>
 
 <h2>消息类型</h2>

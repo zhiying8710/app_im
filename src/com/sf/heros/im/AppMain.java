@@ -62,6 +62,8 @@ public class AppMain {
 
     private static final Logger logger = Logger.getLogger(AppMain.class);
 
+    public static String SERVER_ID = null;
+
     public AppMain() {
 
         init();
@@ -102,13 +104,13 @@ public class AppMain {
 
     private void init() {
         PropsLoader.load();
-        String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
+        SERVER_ID = PropsLoader.get(Const.PropsConst.SERVER_ID);
         String host = PropsLoader.get(Const.PropsConst.IM_HOST);
         String port = PropsLoader.get(Const.PropsConst.IM_PORT);
-        if (serverId == null || host == null || port == null) {
+        if (SERVER_ID == null || host == null || port == null) {
             throw new ExceptionInInitializerError("config im.server.id or im.host or im.port's value can not be null.");
         }
-        PropsLoader.set(Const.PropsConst.SERVER_UNIQUE_ID, serverId + ":" + host + ":" + port);
+        PropsLoader.set(Const.PropsConst.SERVER_UNIQUE_ID, SERVER_ID + ":" + host + ":" + port);
         String channelIdThriftHost = PropsLoader.get(Const.PropsConst.CHANNEL_ID_THRIFT_HOST, "");
         int channelIdThriftPort = PropsLoader.get(Const.PropsConst.CHANNEL_ID_THRIFT_PORT, -1);
         if (channelIdThriftHost.equals("") || channelIdThriftPort == -1) {

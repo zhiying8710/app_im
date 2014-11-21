@@ -8,8 +8,8 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.sf.heros.im.AppMain;
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.Session;
 import com.sf.heros.im.common.bean.msg.ChatResp;
@@ -22,8 +22,6 @@ import com.sf.heros.im.service.UserStatusService;
 public class RespQueueConsumer extends RespEndPoint implements Runnable, Consumer {
 
     private static final Logger logger = Logger.getLogger(RespQueueConsumer.class);
-
-    private static final String SERVER_ID = PropsLoader.get(Const.PropsConst.SERVER_ID);
 
     private UserStatusService userStatusService;
     private SessionService sessionService;
@@ -87,7 +85,7 @@ public class RespQueueConsumer extends RespEndPoint implements Runnable, Consume
                     respMsgService.saveOffline(to, resp);
                 } else {
                     String serverId = session.getServerId();
-                    if (SERVER_ID.equals(serverId)) {
+                    if (AppMain.SERVER_ID.equals(serverId)) {
                         CommonController.get(resp.getType()).exec(resp, sessionId, false);
                     } else {
                         RespPublisher.publish(sessionId, serverId, resp);

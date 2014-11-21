@@ -4,9 +4,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sf.heros.im.AppMain;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.ImUtils;
-import com.sf.heros.im.common.PropsLoader;
 
 public class Resp extends ReqResp implements Serializable {
 
@@ -14,13 +14,12 @@ public class Resp extends ReqResp implements Serializable {
     private int type;
     private Long sid;
     private Map<String, Object> data;
-    private static final String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
 
     protected Resp(Long sid, boolean needMsgNo) {
         super();
         this.sid = sid;
         if (needMsgNo) {
-            setToData(Const.RespConst.DATA_KEY_MSG_NO, ImUtils.getUniqueId(sid + serverId));
+            setToData(Const.RespConst.DATA_KEY_MSG_NO, ImUtils.getUniqueId(sid + AppMain.SERVER_ID));
         }
     }
 

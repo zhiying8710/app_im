@@ -2,6 +2,7 @@ package com.sf.heros.im.common;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.sf.heros.im.AppMain;
 import com.sf.heros.im.channel.ClientChannel;
 import com.sf.heros.im.channel.ClientChannelGroup;
 import com.sf.heros.im.channel.listener.WriteAndFlushFailureListener;
@@ -17,7 +18,6 @@ public class RespPublisher {
     private static AtomicBoolean inited = new AtomicBoolean(false);
 
     private static final RespProducer RESP_PRODUCER = new RespProducer();
-    private static final String SERVER_ID = PropsLoader.get(Const.PropsConst.SERVER_ID);
 
     public static void init(SessionService sessionService, UserStatusService userStatusService) {
         sessionServ = sessionService;
@@ -31,7 +31,7 @@ public class RespPublisher {
         }
 
         ClientChannel channel = null;
-        if (SERVER_ID.equals(serverId)) {
+        if (AppMain.SERVER_ID.equals(serverId)) {
             channel = ClientChannelGroup.get(sessionId);
         }
         if (channel == null) {

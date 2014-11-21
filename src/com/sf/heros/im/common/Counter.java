@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.sf.heros.im.AppMain;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 
@@ -23,7 +24,7 @@ public interface Counter {
 
         private static final RedisManagerV2 rm = RedisManagerV2.getInstance();
         private String key;
-        private static String slot = PropsLoader.get(Const.PropsConst.SERVER_ID);
+        private static String slot = AppMain.SERVER_ID;
 
         public RedisAbstractCounter(String key) {
             this.key = key;
