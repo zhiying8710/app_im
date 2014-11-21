@@ -31,7 +31,7 @@ public class RespPublisher {
         }
 
         ClientChannel channel = null;
-        if (AppMain.SERVER_ID.equals(serverId)) {
+        if (AppMain.SERVER_UNIQUE_ID.equals(serverId)) {
             channel = ClientChannelGroup.get(sessionId);
         }
         if (channel == null) {

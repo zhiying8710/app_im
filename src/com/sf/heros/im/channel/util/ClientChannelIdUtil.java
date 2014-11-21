@@ -13,6 +13,7 @@ import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransportException;
 
+import com.sf.heros.im.AppMain;
 import com.sf.heros.im.channel.ClientChannel;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.PropsLoader;
@@ -89,7 +90,7 @@ public class ClientChannelIdUtil {
     public static void useLocalIdWorker() {
         useLocalIdWorker = true;
         try {
-            int workerId = PropsLoader.get(Const.PropsConst.SERVER_UNIQUE_ID).hashCode() % 31;
+            int workerId = AppMain.SERVER_UNIQUE_ID.hashCode() % 31;
             localIdWorker = new IdWorker(workerId, workerId);
         } catch (Exception e) {
             throw new ExceptionInInitializerError("init local idworker failed.");

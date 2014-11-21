@@ -154,10 +154,11 @@ public class Const {
         public static final String CHANNEL_ID_THRIFT_USRAGENT = "im.channel.id.thrift.usragent";
         public static final String IM_COUNTER_THRIFT_SERVER_PORT = "im.counter.thrift.server.port";
         public static final String UNACKMSG_RESEND_COUNT = "im.unackmsg.resend.count";
-        public static final String SERVER_UNIQUE_ID = "im.server.unique.id";
 
         public static final String MQ_HOST = "im.mq.host";
         public static final String MQ_PORT = "im.mq.port";
+		public static final String MQ_USERNAME = "im.mq.username";
+		public static final String MQ_PASSWORD = "im.mq.password";
 
     }
 

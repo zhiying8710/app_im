@@ -50,7 +50,7 @@ public class ReqDecoder extends ByteToMessageDecoder {
 //            discard = true;
             discardMsg(in);
         }
-
+        logger.info("handler msg for session " + sid);
         try {
             byte[] bodyBtys = new byte[bodyLen];
             in.readBytes(bodyBtys);

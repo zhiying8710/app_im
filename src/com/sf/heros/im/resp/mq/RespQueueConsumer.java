@@ -85,7 +85,7 @@ public class RespQueueConsumer extends RespEndPoint implements Runnable, Consume
                     respMsgService.saveOffline(to, resp);
                 } else {
                     String serverId = session.getServerId();
-                    if (AppMain.SERVER_ID.equals(serverId)) {
+                    if (AppMain.SERVER_UNIQUE_ID.equals(serverId)) {
                         CommonController.get(resp.getType()).exec(resp, sessionId, false);
                     } else {
                         RespPublisher.publish(sessionId, serverId, resp);

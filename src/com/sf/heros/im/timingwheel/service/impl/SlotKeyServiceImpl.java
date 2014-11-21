@@ -12,7 +12,7 @@ public class SlotKeyServiceImpl implements SlotKeyService {
 
     @Override
     public String geneKey(int id) {
-        return SLOT_KEY_PREFIX + AppMain.SERVER_ID + Const.CommonConst.KEY_SEP + id;
+        return SLOT_KEY_PREFIX + AppMain.SERVER_UNIQUE_ID + Const.CommonConst.KEY_SEP + id;
     }
 
     @Override

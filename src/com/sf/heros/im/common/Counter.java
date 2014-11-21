@@ -24,7 +24,7 @@ public interface Counter {
 
         private static final RedisManagerV2 rm = RedisManagerV2.getInstance();
         private String key;
-        private static String slot = AppMain.SERVER_ID;
+        private static String slot = AppMain.SERVER_UNIQUE_ID;
 
         public RedisAbstractCounter(String key) {
             this.key = key;

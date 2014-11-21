@@ -56,11 +56,16 @@ public class LogicMsgHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        Req reqMsg = new Req(Const.ProtocolConst.EMPTY_SESSION_ID, Const.ReqConst.TYPE_STRING_MSG, null);
-//        reqMsg.setType(Const.ReqConst.TYPE_STRING_MSG);
-        reqMsg.setToData(Const.ReqConst.DATA_FROM_USERID, userId);
-        reqMsg.setToData(Const.ReqConst.DATA_TO_USERID, toUserId);
-        new Timer().scheduleAtFixedRate(new SimpleTimerTask(this, ctx.channel(), reqMsg, userId), new Random().nextInt(3000), new Random().nextInt(3000));
+//        Req reqMsg = new Req(Const.ProtocolConst.EMPTY_SESSION_ID, Const.ReqConst.TYPE_STRING_MSG, null);
+////        reqMsg.setType(Const.ReqConst.TYPE_STRING_MSG);
+//        reqMsg.setToData(Const.ReqConst.DATA_FROM_USERID, userId);
+//        reqMsg.setToData(Const.ReqConst.DATA_TO_USERID, toUserId);
+//        new Timer().scheduleAtFixedRate(new SimpleTimerTask(this, ctx.channel(), reqMsg, userId), new Random().nextInt(3000), new Random().nextInt(3000));
+    	Req reqMsg = new Req(Const.ProtocolConst.EMPTY_SESSION_ID, Const.ReqConst.TYPE_LOGIN, null);
+        reqMsg.setToData(Const.ReqConst.DATA_AUTH_USERID, userId);
+        reqMsg.setToData(Const.ReqConst.DATA_AUTH_TOKEN, token);
+        reqMsg.setType(Const.ReqConst.TYPE_LOGIN);
+        writeAndFlush(ctx.channel(), reqMsg);
 
         super.channelActive(ctx);
     }

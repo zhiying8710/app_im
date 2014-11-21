@@ -35,7 +35,7 @@ public class RedisUnAckRespMsgServiceImpl implements
     }
 
     private String unAckRespMsgResendKey() {
-        return Const.RedisConst.RESP_MSG_UNACK_RESEND_KEY + Const.CommonConst.KEY_SEP + AppMain.SERVER_ID;
+        return Const.RedisConst.RESP_MSG_UNACK_RESEND_KEY + Const.CommonConst.KEY_SEP + AppMain.SERVER_UNIQUE_ID;
     }
 
     @Override

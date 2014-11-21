@@ -57,7 +57,7 @@ public class LoginController extends CommonController {
         String userId = reqMsg.getFromData(Const.ReqConst.DATA_AUTH_USERID, "").toString();
         String token = reqMsg.getFromData(Const.ReqConst.DATA_AUTH_TOKEN, "").toString();
         if (StringUtils.isBlank(userId) || StringUtils.isBlank(token)) {
-            RespPublisher.publish(sessionId, userId, new AskLoginResp());
+            RespPublisher.publish(sessionId, AppMain.SERVER_UNIQUE_ID, new AskLoginResp());
             return;
         }
 
@@ -71,15 +71,15 @@ public class LoginController extends CommonController {
         }
 
         if (!checkRes.isPass()) {
-            RespPublisher.publish(sessionId, userId, new AuthErrResp());
+            RespPublisher.publish(sessionId, AppMain.SERVER_UNIQUE_ID, new AuthErrResp());
             return;
         }
         Resp loginRespMsg = new LoginResp(sessionId);
         if (!checkRes.isOnline()) {
-            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE, AppMain.SERVER_ID);
+            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE, AppMain.SERVER_UNIQUE_ID);
             sessionService.add(sessionId, session);
             userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
-            RespPublisher.publish(sessionId, userId, loginRespMsg);
+            RespPublisher.publish(sessionId, AppMain.SERVER_UNIQUE_ID, loginRespMsg);
             logger.info("user(" + userId + ") login, return session id " + sessionId);
 
             List<String> offlineMsgs = respMsgService.getOfflines(userId);
@@ -93,7 +93,7 @@ public class LoginController extends CommonController {
                 for (int i = 0; i < page; i++) {
                     if (k == Const.CommonConst.OFFLINE_MSG_SEND_PER_SIZE) {
                         Resp respMsg = new OfflineMsgsResp(sessionId, perOfflineMsgs, Const.CommonConst.SERVER_USER_ID + Const.CommonConst.KEY_SEP + new Date().getTime(), userId);
-                        RespPublisher.publish(sessionId, userId, respMsg);
+                        RespPublisher.publish(sessionId, AppMain.SERVER_UNIQUE_ID, respMsg);
 
                         String msgNo = respMsg.getMsgNo();
                         respMsgService.saveUnAck(msgNo, respMsg);
@@ -118,10 +118,10 @@ public class LoginController extends CommonController {
                 RespPublisher.publish(kSessionId, kickSession.getServerId(), new KickedResp(kSessionId));
                 logger.info("user(" + userId + ") is login in more than onece, kick the first login.");
             }
-            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE, AppMain.SERVER_ID);
+            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE, AppMain.SERVER_UNIQUE_ID);
             sessionService.add(sessionId, session);
             userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
-            RespPublisher.publish(kSessionId, kickSession.getServerId(), loginRespMsg);
+            RespPublisher.publish(sessionId, AppMain.SERVER_UNIQUE_ID, loginRespMsg);
             logger.info("user(" + userId + ") login, return session id " + sessionId);
         }
     }

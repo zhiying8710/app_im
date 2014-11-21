@@ -62,7 +62,7 @@ public class AppMain {
 
     private static final Logger logger = Logger.getLogger(AppMain.class);
 
-    public static String SERVER_ID = null;
+    public static String SERVER_UNIQUE_ID = null;
 
     public AppMain() {
 
@@ -104,13 +104,13 @@ public class AppMain {
 
     private void init() {
         PropsLoader.load();
-        SERVER_ID = PropsLoader.get(Const.PropsConst.SERVER_ID);
+        String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
         String host = PropsLoader.get(Const.PropsConst.IM_HOST);
         String port = PropsLoader.get(Const.PropsConst.IM_PORT);
-        if (SERVER_ID == null || host == null || port == null) {
+        if (serverId == null || host == null || port == null) {
             throw new ExceptionInInitializerError("config im.server.id or im.host or im.port's value can not be null.");
         }
-        PropsLoader.set(Const.PropsConst.SERVER_UNIQUE_ID, SERVER_ID + ":" + host + ":" + port);
+        SERVER_UNIQUE_ID = serverId + ":" + host + ":" + port;
         String channelIdThriftHost = PropsLoader.get(Const.PropsConst.CHANNEL_ID_THRIFT_HOST, "");
         int channelIdThriftPort = PropsLoader.get(Const.PropsConst.CHANNEL_ID_THRIFT_PORT, -1);
         if (channelIdThriftHost.equals("") || channelIdThriftPort == -1) {
@@ -148,10 +148,6 @@ public class AppMain {
                     PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_PER_SLOT_SECS, 1), TimeUnit.SECONDS,
                     PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_NAME, "un_ack_msg_wheel"), wheel, indicator, slotKeyService, respMsgService));
 
-
-//            final ReSendUnAckRespMsgHandler reSendUnAckRespMsgHandler = new ReSendUnAckRespMsgHandler(
-//                    sessionService, userStatusService, respMsgService, unAckRespMsgService,
-//                    PropsLoader.get(Const.PropsConst.RE_SEND_UN_ACK_POOL_SIZE, 5));
 
             final FinalHandler finalHandler = new FinalHandler();
 

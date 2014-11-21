@@ -19,7 +19,7 @@ public class Resp extends ReqResp implements Serializable {
         super();
         this.sid = sid;
         if (needMsgNo) {
-            setToData(Const.RespConst.DATA_KEY_MSG_NO, ImUtils.getUniqueId(sid + AppMain.SERVER_ID));
+            setToData(Const.RespConst.DATA_KEY_MSG_NO, ImUtils.getUniqueId(sid + AppMain.SERVER_UNIQUE_ID));
         }
     }
 

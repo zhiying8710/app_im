@@ -36,12 +36,12 @@ public class ChatController extends CommonController {
 
     @Override
     public void exec(Object msg, Long sessionId, boolean needAck) throws Exception {
-        sessionService.updatePingTime(sessionId);
 
         Session fromSession = sessionService.get(sessionId);
         if (fromSession == null) {
             return;
         }
+        sessionService.updatePingTime(sessionId);
 
         String serverId = fromSession.getServerId();
         Req reqMsg = transfer(msg);
