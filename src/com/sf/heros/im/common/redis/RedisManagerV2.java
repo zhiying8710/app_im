@@ -22,6 +22,7 @@ import redis.clients.jedis.Transaction;
 import redis.clients.util.Pool;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.EvolutionMethodUtils;
 import com.sf.heros.im.common.PropsLoader;
 
 public class RedisManagerV2 {
@@ -39,7 +40,7 @@ public class RedisManagerV2 {
 
     private RedisManagerV2() {
         defaultDb = new Long(PropsLoader.get(Const.PropsConst.REDIS_DF_DB, 0));
-        int redisTimeout = PropsLoader.get(Const.PropsConst.REDIS_TIMEOUT, 10);
+        int redisTimeout = PropsLoader.get(Const.PropsConst.REDIS_TIMEOUT, 1000);
         int defaultConns = PropsLoader.get(Const.PropsConst.REDIS_DF_CONNS, 100);
 
         String poolType = PropsLoader.get(Const.PropsConst.REDIS_POOL_TYPE, REDIS_POOL_TYPE_SINGLE);
@@ -1180,6 +1181,42 @@ public class RedisManagerV2 {
         } finally {
             if (borrowOrOprSuccess) {
                 this.disConnected(j);
+            }
+        }
+	}
+
+	@SuppressWarnings("resource")
+	public boolean pipeline0(List<RedisCmdPair> cmdPairs) {
+		Jedis jedis = null;
+		Pipeline pipeline = null;
+		boolean borrowOrOprSuccess = true;
+        try {
+            jedis = this.connect();
+            pipeline = jedis.pipelined();
+            pipeline.multi();
+            for (RedisCmdPair cmdPair : cmdPairs) {
+                String cmd = cmdPair.getCmd();
+
+                Object[] oArgs = cmdPair.getoArgs();
+                try {
+                	EvolutionMethodUtils.invokeMethod(pipeline, cmd, oArgs);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            pipeline.exec();
+            return true;
+        } catch (Exception e) {
+        	borrowOrOprSuccess = true;
+            if (pipeline != null) {
+				pipeline.discard();
+			}
+            e.printStackTrace();
+            this.returnBrokenResource(jedis);
+            return false;
+        } finally {
+        	if (borrowOrOprSuccess) {
+                this.disConnected(jedis);
             }
         }
 	}
