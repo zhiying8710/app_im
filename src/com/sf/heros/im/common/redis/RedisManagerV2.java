@@ -8,7 +8,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -575,7 +574,7 @@ public class RedisManagerV2 {
 
                 Object[] oArgs = cmdPair.getoArgs();
                 try {
-                    MethodUtils.invokeMethod(trans, cmd, oArgs);
+                	EvolutionMethodUtils.invokeMethod(trans, cmd, oArgs);
 //					MethodUtils.invokeExactMethod(trans, cmd, oArgs);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -1127,7 +1126,7 @@ public class RedisManagerV2 {
 
                 Object[] oArgs = cmdPair.getoArgs();
                 try {
-                    MethodUtils.invokeMethod(pipeline, cmd, oArgs);
+                	EvolutionMethodUtils.invokeMethod(pipeline, cmd, oArgs);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -1181,42 +1180,6 @@ public class RedisManagerV2 {
         } finally {
             if (borrowOrOprSuccess) {
                 this.disConnected(j);
-            }
-        }
-	}
-
-	@SuppressWarnings("resource")
-	public boolean pipeline0(List<RedisCmdPair> cmdPairs) {
-		Jedis jedis = null;
-		Pipeline pipeline = null;
-		boolean borrowOrOprSuccess = true;
-        try {
-            jedis = this.connect();
-            pipeline = jedis.pipelined();
-            pipeline.multi();
-            for (RedisCmdPair cmdPair : cmdPairs) {
-                String cmd = cmdPair.getCmd();
-
-                Object[] oArgs = cmdPair.getoArgs();
-                try {
-                	EvolutionMethodUtils.invokeMethod(pipeline, cmd, oArgs);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            pipeline.exec();
-            return true;
-        } catch (Exception e) {
-        	borrowOrOprSuccess = true;
-            if (pipeline != null) {
-				pipeline.discard();
-			}
-            e.printStackTrace();
-            this.returnBrokenResource(jedis);
-            return false;
-        } finally {
-        	if (borrowOrOprSuccess) {
-                this.disConnected(jedis);
             }
         }
 	}
