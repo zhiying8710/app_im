@@ -185,4 +185,13 @@ public class ClientChannelGroup {
         return channels.get(channelId);
     }
 
+    public static void close(Long channelId) {
+        ClientChannel clientChannel = get(channelId);
+        if (clientChannel != null) {
+            clientChannel.close();
+        }
+
+
+    }
+
 }

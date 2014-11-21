@@ -1,7 +1,5 @@
 package com.sf.heros.im.req.controller;
 
-import io.netty.channel.ChannelHandlerContext;
-
 import com.sf.heros.im.service.SessionService;
 
 public class PingController extends CommonController {
@@ -9,12 +7,12 @@ public class PingController extends CommonController {
     private SessionService sessionService;
 
     public PingController(SessionService sessionService) {
-        super(sessionService);
+        super(null, null);
         this.sessionService = sessionService;
     }
 
     @Override
-    public void exec(Object msg, ChannelHandlerContext ctx, Long sessionId) {
+    public void exec(Object msg, Long sessionId, boolean needAck) {
         sessionService.updatePingTime(sessionId);
 
     }

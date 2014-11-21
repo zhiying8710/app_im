@@ -3,6 +3,7 @@ package com.sf.heros.im.service.impl;
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
@@ -13,6 +14,8 @@ public class RedisUnAckRespMsgServiceImpl implements
         UnAckRespMsgService {
 
     private static final Logger logger = Logger.getLogger(RedisUnAckRespMsgServiceImpl.class);
+
+    private static final String SERVER_ID = PropsLoader.get(Const.PropsConst.SERVER_ID);;
 
     private UnAckRespMsgFixIntervalTimingWheel unAckRespMsgTimingWheel;
     private RedisManagerV2 rm;
@@ -34,7 +37,7 @@ public class RedisUnAckRespMsgServiceImpl implements
     }
 
     private String unAckRespMsgResendKey() {
-        return Const.RedisConst.RESP_MSG_UNACK_RESEND_KEY;
+        return Const.RedisConst.RESP_MSG_UNACK_RESEND_KEY + Const.CommonConst.KEY_SEP + SERVER_ID;
     }
 
     @Override
@@ -57,13 +60,13 @@ public class RedisUnAckRespMsgServiceImpl implements
     }
 
     @Override
-    public void add(String unAckMsgId) {
-        unAckRespMsgTimingWheel.add(unAckMsgId);
+    public void add(String msgNo) {
+        unAckRespMsgTimingWheel.add(msgNo);
     }
 
     @Override
-    public void remove(String unAckMsgId) {
-        unAckRespMsgTimingWheel.remove(unAckMsgId);
+    public void remove(String msgNo) {
+        unAckRespMsgTimingWheel.remove(msgNo);
     }
 
     @Override

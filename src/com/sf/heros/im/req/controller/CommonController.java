@@ -9,14 +9,17 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.sf.heros.im.channel.listener.WriteAndFlushFailureListener;
 import com.sf.heros.im.common.Const;
-import com.sf.heros.im.common.RespMsgPublisher;
+import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.Session;
+import com.sf.heros.im.common.bean.msg.AckResp;
 import com.sf.heros.im.common.bean.msg.AskLoginResp;
 import com.sf.heros.im.common.bean.msg.KickedResp;
 import com.sf.heros.im.common.bean.msg.Req;
 import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.service.SessionService;
+import com.sf.heros.im.service.UserStatusService;
 
 
 public abstract class CommonController {
@@ -26,6 +29,7 @@ public abstract class CommonController {
     private static final Map<Integer, CommonController> CONTROLLERS = new HashMap<Integer, CommonController>();
 
     private SessionService sessionService;
+    private UserStatusService userStatusService;
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -42,11 +46,12 @@ public abstract class CommonController {
         }));
     }
 
-    public CommonController(SessionService sessionService) {
+    public CommonController(SessionService sessionService, UserStatusService userStatusService) {
         this.sessionService = sessionService;
+        this.userStatusService = userStatusService;
     }
 
-    public abstract void exec(Object msg, ChannelHandlerContext ctx, Long sessionId);
+    public abstract void exec(Object msg, Long sessionId, boolean needAck) throws Exception ;
 
     public void release() {
         logger.info(this.getClass() + " released.");
@@ -77,7 +82,7 @@ public abstract class CommonController {
     protected final void writeAndFlush(Channel channel, Resp respMsg) {
         try {
 //            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
-            channel.writeAndFlush(respMsg);
+            channel.writeAndFlush(respMsg).addListener(new WriteAndFlushFailureListener(sessionService, userStatusService));
             logger.info("write resp msg " + respMsg);
         } catch (Exception e) {
         }
@@ -87,29 +92,45 @@ public abstract class CommonController {
         writeAndFlush(ctx.channel(), respMsg);
     }
 
-    protected final boolean checkAuth(Object msg, ChannelHandlerContext ctx, Long sessionId) {
+    public final boolean checkAuth(Object msg, Long sessionId) throws Exception {
         Req reqMsg = transfer(msg);
         Long reqSessionId = reqMsg.getSid();
         Session session = null;
 
         if (reqSessionId != null && reqSessionId.longValue() != Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
-            session = sessionService.get(reqSessionId);
+            try {
+                session = sessionService.get(reqSessionId);
+            } catch (Exception e) {
+                logger.error("get session err.", e);
+                return false;
+            }
             if (reqSessionId.equals(sessionId) && session != null) {
                 if (Session.STATUS_KICKED == session.getStatus()) {
-                    if (!RespMsgPublisher.publish(reqSessionId, new KickedResp(reqSessionId))) {
-                        return false;
+                    try {
+                        RespPublisher.publish(reqSessionId, session.getServerId(), new KickedResp(reqSessionId));
+                        logger.info("user(" + session.getUserId() + ") which session(" + reqSessionId + ") is kicked.");
+                    } catch (Exception e) {
+                        logger.error("publish kick msg error.", e);
                     }
-                    logger.info("user(" + session.getUserId() + ") which session(" + reqSessionId + ") is kicked.");
                     return false;
                 }
                 return true;
             } else {
-                writeAndFlush(ctx.channel(), new AskLoginResp(Const.ProtocolConst.EMPTY_SESSION_ID));
+                RespPublisher.publish(reqSessionId, session.getServerId(), new AskLoginResp());
                 return false;
             }
         } else {
-            writeAndFlush(ctx.channel(), new AskLoginResp(Const.ProtocolConst.EMPTY_SESSION_ID));
             return false;
         }
     }
+
+    protected void ack(Long sessionId, String serverId, String msgNo, String to, boolean needAck)
+            throws Exception {
+        if (!needAck) {
+            return;
+        }
+        Resp ackMsg = new AckResp(sessionId, msgNo, sessionService.get(sessionId).getUserId(), to);
+        RespPublisher.publish(sessionId, serverId, ackMsg);
+    }
+
 }

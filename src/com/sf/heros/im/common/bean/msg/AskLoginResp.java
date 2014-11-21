@@ -6,8 +6,8 @@ public class AskLoginResp extends Resp {
 
     private static final long serialVersionUID = 1L;
 
-    public AskLoginResp(Long sid) {
-        super(sid, false);
+    public AskLoginResp() {
+        super(Const.ProtocolConst.EMPTY_SESSION_ID, false);
         setType(Const.RespConst.TYPE_ASK_LOGIN);
     }
 

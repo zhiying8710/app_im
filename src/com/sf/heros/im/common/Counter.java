@@ -1,7 +1,5 @@
 package com.sf.heros.im.common;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -25,15 +23,7 @@ public interface Counter {
 
         private static final RedisManagerV2 rm = RedisManagerV2.getInstance();
         private String key;
-        private static String slot;
-
-        static {
-            try {
-                slot = PropsLoader.get(Const.PropsConst.SERVER_NAME, InetAddress.getLocalHost().getHostName());
-            } catch (UnknownHostException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static String slot = PropsLoader.get(Const.PropsConst.SERVER_ID);
 
         public RedisAbstractCounter(String key) {
             this.key = key;

@@ -90,7 +90,7 @@ public class RedisSessionServiceImpl implements SessionService {
     }
 
     @Override
-    public Session get(Long id) {
+    public Session get(Long id) throws RedisConnException {
         if (id == null || id.longValue() == Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
             return null;
         }
@@ -107,7 +107,7 @@ public class RedisSessionServiceImpl implements SessionService {
         } catch (RedisConnException e) {
             logger.error("get session(" + id + ") error", e);
             ex = false;
-            return null;
+            throw e;
         } finally {
             if (ex) {
                 try {
@@ -162,8 +162,12 @@ public class RedisSessionServiceImpl implements SessionService {
             }
 
         }
-
-        dealWithSession(new UpdatePingTimeDeal(key));
+        try {
+            if (rm.exist(key)) {
+                dealWithSession(new UpdatePingTimeDeal(key));
+            }
+        } catch (RedisConnException e) {
+        }
     }
 
     interface DealWithSession {
@@ -207,7 +211,7 @@ public class RedisSessionServiceImpl implements SessionService {
     }
 
     @Override
-    public Session kick(Long id) {
+    public Session kick(Long id) throws RedisConnException {
         if (id == null || id.longValue() == Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
             return null;
         }

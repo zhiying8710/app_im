@@ -3,7 +3,7 @@ package com.sf.heros.im.common.bean.msg;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.bean.UserInfo;
 
-public class StringResp extends Resp {
+public class StringResp extends ChatResp {
 
     private static final long serialVersionUID = 1L;
 

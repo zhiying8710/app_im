@@ -21,7 +21,11 @@ import com.sf.heros.im.common.redis.RedisManagerV2;
 @Deprecated
 public class RespMsgSubHandler extends CommonInboundHandler {
 
-    private static final Logger logger = Logger.getLogger(RespMsgSubHandler.class);
+    public RespMsgSubHandler() {
+		super(null, null);
+	}
+
+	private static final Logger logger = Logger.getLogger(RespMsgSubHandler.class);
 
     private ExecutorService subExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
 

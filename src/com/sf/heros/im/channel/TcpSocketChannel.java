@@ -1,8 +1,6 @@
 package com.sf.heros.im.channel;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.nio.channels.SocketChannel;
@@ -52,9 +50,6 @@ public class TcpSocketChannel extends NioSocketChannel implements ClientChannel 
         if (this.id.longValue() == Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
             throw new ExceptionInInitializerError(this + " init error.");
         }
-        if (!group()) {
-            throw new ExceptionInInitializerError(this + " group error when init.");
-        }
     }
 
     @Override
@@ -65,17 +60,5 @@ public class TcpSocketChannel extends NioSocketChannel implements ClientChannel 
     @Override
     public boolean ungroup() {
         return ClientChannelGroup.remove(this);
-    }
-
-    @Override
-    public ChannelFuture disconnect() {
-        ungroup();
-        return super.disconnect();
-    }
-
-    @Override
-    public ChannelFuture disconnect(ChannelPromise promise) {
-        ungroup();
-        return super.disconnect(promise);
     }
 }

@@ -14,7 +14,9 @@ import com.sf.heros.im.service.AuthService;
 
 public class RedisAuthServiceImpl implements AuthService {
 
-    private static final Logger logger = Logger.getLogger(RedisAuthServiceImpl.class);
+    private static final boolean checkIllegal = PropsLoader.get(Const.PropsConst.AUTH_CHECK_SO_ILLAG, false);
+
+	private static final Logger logger = Logger.getLogger(RedisAuthServiceImpl.class);
 
     private RedisManagerV2 rm;
 
@@ -28,8 +30,9 @@ public class RedisAuthServiceImpl implements AuthService {
         try {
             Map<String, String> info = rm.hgetAll(Const.RedisConst.USER_STATUS_KEY_PRIFIX + userId);
 
-            if (PropsLoader.get(Const.PropsConst.AUTH_CHECK_SO_ILLAG, false)) {
-                if (info.isEmpty() || Const.RedisConst.USER_STATUS_VAL_ONLINE_ONLINE.equals(info.get(Const.RedisConst.USER_SATATUS_KEY_ONLINE))) {
+            if (checkIllegal) {
+                if (info.isEmpty() || info.get(Const.RedisConst.USER_STATUS_KEY_TOKEN) == null || !info.get(Const.RedisConst.USER_STATUS_KEY_TOKEN).equals(token)
+                		|| Const.RedisConst.USER_STATUS_VAL_ONLINE_ONLINE.equals(info.get(Const.RedisConst.USER_SATATUS_KEY_ONLINE))) {
                     check.setIllegal(false);
                     check.setPass(false);
                     check.setOnline(false);

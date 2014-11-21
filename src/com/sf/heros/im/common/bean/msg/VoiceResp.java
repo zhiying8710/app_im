@@ -3,7 +3,7 @@ package com.sf.heros.im.common.bean.msg;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.bean.UserInfo;
 
-public class VoiceResp extends Resp {
+public class VoiceResp extends ChatResp {
 
     private static final long serialVersionUID = 1L;
 
@@ -31,5 +31,9 @@ public class VoiceResp extends Resp {
 
     private void setTo(String to) {
         setToData(Const.RespConst.DATA_KEY_TO_USER_ID, to);
+    }
+
+    public String getTo() {
+        return getFromData(Const.RespConst.DATA_KEY_TO_USER_ID).toString();
     }
 }

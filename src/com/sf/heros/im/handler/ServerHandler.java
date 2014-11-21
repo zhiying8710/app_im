@@ -1,5 +1,6 @@
 package com.sf.heros.im.handler;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
@@ -10,6 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.log4j.Logger;
 
+import com.sf.heros.im.channel.ClientChannel;
 import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.Counter;
@@ -39,7 +41,7 @@ public class ServerHandler extends CommonInboundHandler {
 
     public ServerHandler(AuthService authService, SessionService sessionService,
             UserStatusService userStatusService, UserInfoService userInfoService, RespMsgService respMsgService, UnAckRespMsgService unAckRespMsgService) {
-        super();
+        super(sessionService, userStatusService);
         this.sessionService = sessionService;
         this.userStatusService = userStatusService;
         CommonController.add(Const.ReqConst.TYPE_ACK, new AckController(sessionService, respMsgService, unAckRespMsgService));
@@ -70,6 +72,10 @@ public class ServerHandler extends CommonInboundHandler {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Counter.ConnsCounter.INSTANCE.incrAndGet();
+        Channel channel = ctx.channel();
+        if (channel != null && channel instanceof ClientChannel) {
+            ((ClientChannel)channel).group();
+        }
         super.channelActive(ctx);
     }
 
@@ -77,12 +83,21 @@ public class ServerHandler extends CommonInboundHandler {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         userOffline(ctx);
         Counter.ConnsCounter.INSTANCE.decrAndGet();
+        Channel channel = ctx.channel();
+        if (channel != null && channel instanceof ClientChannel) {
+            ((ClientChannel)channel).ungroup();
+        }
         super.channelInactive(ctx);
     }
 
     private void userOffline(ChannelHandlerContext ctx) {
         Long sessionId = ClientChannelIdUtil.getId(ctx);
-        Session session = sessionService.get(sessionId);
+        Session session = null;
+        try {
+            session = sessionService.get(sessionId);
+        } catch (Exception e) {
+            logger.error("get session error.", e);
+        }
         if (session != null) {
             String userId = session.getUserId();
             userStatusService.userOffline(userId);
@@ -95,18 +110,18 @@ public class ServerHandler extends CommonInboundHandler {
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
         Req reqMsg = null;
-        if (msg instanceof Req) {
-            try {
-                reqMsg = (Req) msg;
-                int type = reqMsg.getType();
-                CommonController.get(type).exec(msg, ctx, ClientChannelIdUtil.getId(ctx));
-            } catch (Exception e) {
-                logger.error("handler reqMsg(" + reqMsg.toJson() + ") error", e);
-            } finally {
-                releaseObjs(reqMsg, msg);
-            }
-        } else {
+        if (!(msg instanceof Req)) {
             super.channelRead(ctx, msg);
+            return;
+        }
+        try {
+            reqMsg = (Req) msg;
+            int type = reqMsg.getType();
+            CommonController.get(type).exec(msg, ClientChannelIdUtil.getId(ctx), true);
+        } catch (Exception e) {
+            logger.error("handler reqMsg(" + reqMsg.toJson() + ") error", e);
+        } finally {
+            releaseObjs(reqMsg, msg);
         }
     }
 

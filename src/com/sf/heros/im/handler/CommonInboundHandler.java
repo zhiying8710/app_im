@@ -7,11 +7,22 @@ import io.netty.util.ReferenceCountUtil;
 
 import org.apache.log4j.Logger;
 
+import com.sf.heros.im.channel.listener.WriteAndFlushFailureListener;
 import com.sf.heros.im.common.bean.msg.Resp;
+import com.sf.heros.im.service.SessionService;
+import com.sf.heros.im.service.UserStatusService;
 
 public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger logger = Logger.getLogger(CommonInboundHandler.class);
+
+    private SessionService sessionService;
+    private UserStatusService userStatusService;
+
+    public CommonInboundHandler(SessionService sessionService, UserStatusService userStatusService) {
+    	this.sessionService = sessionService;
+    	this.userStatusService = userStatusService;
+	}
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
@@ -35,7 +46,7 @@ public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
     public void writeAndFlush(Channel channel, Resp respMsg) {
         try {
 //            channel.writeAndFlush(ImUtils.getBuf(channel.alloc(), respMsg));
-            channel.writeAndFlush(respMsg);
+            channel.writeAndFlush(respMsg).addListener(new WriteAndFlushFailureListener(sessionService, userStatusService));
             logger.info("write resp msg " + respMsg);
         } catch (Exception e) {
         }
@@ -46,3 +57,4 @@ public class CommonInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
 }
+

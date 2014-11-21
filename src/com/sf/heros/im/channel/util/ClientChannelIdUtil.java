@@ -3,7 +3,6 @@ package com.sf.heros.im.channel.util;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-import java.net.InetAddress;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -90,7 +89,7 @@ public class ClientChannelIdUtil {
     public static void useLocalIdWorker() {
         useLocalIdWorker = true;
         try {
-            int workerId = PropsLoader.get(Const.PropsConst.SERVER_NAME, InetAddress.getLocalHost().getHostName()).hashCode() % 31;
+            int workerId = PropsLoader.get(Const.PropsConst.SERVER_UNIQUE_ID).hashCode() % 31;
             localIdWorker = new IdWorker(workerId, workerId);
         } catch (Exception e) {
             throw new ExceptionInInitializerError("init local idworker failed.");

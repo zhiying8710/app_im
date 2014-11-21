@@ -4,6 +4,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -15,6 +16,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -26,9 +28,12 @@ import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.Const;
 import com.sf.heros.im.common.Counter;
 import com.sf.heros.im.common.PropsLoader;
+import com.sf.heros.im.common.RespPublisher;
+import com.sf.heros.im.common.bean.Session;
+import com.sf.heros.im.common.bean.msg.Resp;
+import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.handler.FinalHandler;
-import com.sf.heros.im.handler.ReSendUnAckRespMsgHandler;
 import com.sf.heros.im.handler.ReqDecoder;
 import com.sf.heros.im.handler.RespEncoder;
 import com.sf.heros.im.handler.ServerHandler;
@@ -97,6 +102,13 @@ public class AppMain {
 
     private void init() {
         PropsLoader.load();
+        String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
+        String host = PropsLoader.get(Const.PropsConst.IM_HOST);
+        String port = PropsLoader.get(Const.PropsConst.IM_PORT);
+        if (serverId == null || host == null || port == null) {
+            throw new ExceptionInInitializerError("config im.server.id or im.host or im.port's value can not be null.");
+        }
+        PropsLoader.set(Const.PropsConst.SERVER_UNIQUE_ID, serverId + ":" + host + ":" + port);
         String channelIdThriftHost = PropsLoader.get(Const.PropsConst.CHANNEL_ID_THRIFT_HOST, "");
         int channelIdThriftPort = PropsLoader.get(Const.PropsConst.CHANNEL_ID_THRIFT_PORT, -1);
         if (channelIdThriftHost.equals("") || channelIdThriftPort == -1) {
@@ -107,18 +119,6 @@ public class AppMain {
 
         Counter.ConnsCounter.INSTANCE.init();
         Counter.OnlinesCounter.INSTANCE.init();
-
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    new ImCounterServer().boot(PropsLoader.get(Const.PropsConst.IM_COUNTER_THRIFT_SERVER_PORT, 19000));
-                } catch (Exception e) {
-                    logger.error("im counter server run error.", e);
-                }
-            }
-        });
     }
 
     public void boot(ServerBootstrap server) {
@@ -131,6 +131,8 @@ public class AppMain {
             final SessionService sessionService = new RedisSessionServiceImpl();
             final UserInfoService userInfoService = new RedisUserInfoServiceImpl();
             final RespMsgService respMsgService = new RedisRespMsgServiceImpl();
+            respMsgService.clearUnAck();
+
             WheelService wheel = new MemWheelServiceImpl();
             IndicatorService indicator = new RedisIndicatorServiceImpl();
             SlotKeyService slotKeyService = new SlotKeyServiceImpl();
@@ -145,15 +147,17 @@ public class AppMain {
                     PropsLoader.get(Const.PropsConst.UN_ACK_RESP_MSG_WHEEL_NAME, "un_ack_msg_wheel"), wheel, indicator, slotKeyService, respMsgService));
 
 
-            final ReSendUnAckRespMsgHandler reSendUnAckRespMsgHandler = new ReSendUnAckRespMsgHandler(
-                    sessionService, userStatusService, respMsgService, unAckRespMsgService,
-                    PropsLoader.get(Const.PropsConst.RE_SEND_UN_ACK_POOL_SIZE, 5));
+//            final ReSendUnAckRespMsgHandler reSendUnAckRespMsgHandler = new ReSendUnAckRespMsgHandler(
+//                    sessionService, userStatusService, respMsgService, unAckRespMsgService,
+//                    PropsLoader.get(Const.PropsConst.RE_SEND_UN_ACK_POOL_SIZE, 5));
 
             final FinalHandler finalHandler = new FinalHandler();
 
             final ServerHandler serverHandler = new ServerHandler(authService, sessionService, userStatusService, userInfoService, respMsgService, unAckRespMsgService);
 
 //            final PrintHandler printHandler = new PrintHandler();
+
+            RespPublisher.init(sessionService, userStatusService);
 
             server.childHandler(new ChannelInitializer<Channel>() {
 
@@ -162,7 +166,7 @@ public class AppMain {
                                 throws Exception {
                             ch.pipeline()
 //                                    .addLast(Const.HandlerConst.HANDLER_RESP_MSG_SUB_NAME, new RespMsgSubHandler())
-                                    .addLast(Const.HandlerConst.HANDLER_RE_SEND_UN_ACK_NAME, reSendUnAckRespMsgHandler)
+//                                    .addLast(Const.HandlerConst.HANDLER_RE_SEND_UN_ACK_NAME, reSendUnAckRespMsgHandler)
                                     .addLast(Const.HandlerConst.HANDLER_MSG_DECODER_NAME, new ReqDecoder(Const.ProtocolConst.MSG_BODY_MAX_BYTES,
                                                                                                          Const.ProtocolConst.DEFAULT_CHARSET))
 //                                    .addLast(Const.HandlerConst.HANDLER_PRINT_NAME, printHandler)
@@ -179,7 +183,12 @@ public class AppMain {
             logger.info("inited ServerBootstrap.");
             String servHost = PropsLoader.get(Const.PropsConst.IM_HOST, "127.0.0.1");
             int servPort = PropsLoader.get(Const.PropsConst.IM_PORT, 9000);
-            ChannelFuture bindFuture = server.bind(servHost, servPort).sync();
+            ChannelFuture bindFuture = server.bind(servHost, servPort).addListener(new ReSendUnAckRespLinstener(
+                                                                        sessionService,
+                                                                        userStatusService,
+                                                                        respMsgService,
+                                                                        unAckRespMsgService,
+                                                                        PropsLoader.get(Const.PropsConst.RE_SEND_UN_ACK_POOL_SIZE, 5))).sync();
             logger.info("bound ServerBootstrap to " + servHost + ":" + servPort + ", app booted.");
 
             bindFuture.channel().closeFuture().sync();
@@ -221,6 +230,150 @@ public class AppMain {
     public static void main(String[] args) {
 
         new AppMain();
+
+    }
+
+}
+
+class ReSendUnAckRespLinstener implements ChannelFutureListener {
+
+    private static final Logger logger = Logger.getLogger(ReSendUnAckRespLinstener.class);
+
+    private static final int UNACKMSG_MAX_COUNT = PropsLoader.get(Const.PropsConst.UNACKMSG_RESEND_COUNT, 2);
+
+    private final RedisManagerV2 rm = RedisManagerV2.getInstance();
+
+     private SessionService sessionService;
+     private UserStatusService userStatusService;
+     private RespMsgService respMsgService;
+     private UnAckRespMsgService unAckRespMsgService;
+     private ExecutorService executor;
+     private int poolSize;
+
+    public ReSendUnAckRespLinstener(SessionService sessionService,
+            UserStatusService userStatusService, RespMsgService respMsgService, UnAckRespMsgService unAckRespMsgService, int poolSize) {
+        this.sessionService = sessionService;
+        this.userStatusService = userStatusService;
+        this.respMsgService = respMsgService;
+        this.unAckRespMsgService = unAckRespMsgService;
+        this.poolSize = poolSize;
+    }
+
+    @Override
+    public void operationComplete(ChannelFuture future) throws Exception {
+        if (future.isSuccess()) {
+
+            executor = Executors.newFixedThreadPool(poolSize);
+            logger.info("start a exector for resend unack resp msg, poll size : " + poolSize + ".");
+            for (int i = 0; i < poolSize; i++) {
+                executor.execute(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        while (true) {
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(0);
+                            } catch (InterruptedException e) {
+                            }
+                            String unAckRespMsg = unAckRespMsgService.popFromQueue();
+                            if (unAckRespMsg == null) {
+                                try {
+                                    TimeUnit.MILLISECONDS.sleep(500);
+                                    continue;
+                                } catch (InterruptedException e) {
+                                }
+                            }
+                            Resp respMsg = Resp.fromJson(unAckRespMsg, Resp.class);
+                            String toUserId = respMsg.getFromData(Const.RespConst.DATA_KEY_TO_USER_ID, "null").toString();
+                            Long sessionId = userStatusService.getSessionId(toUserId);
+                            String msgNo = respMsg.getMsgNo();
+                            synchronized (msgNo) {
+                                try {
+                                    if (rm.hincrby(Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, msgNo, 0) > UNACKMSG_MAX_COUNT) {
+                                        logger.error("msg " + msgNo + " to user " + toUserId + " has sent more than " + UNACKMSG_MAX_COUNT + "time, so just discrad it.");
+                                        respMsgService.delOffline(toUserId, msgNo);
+                                        continue;
+                                    }
+                                } catch (RedisConnException e) {
+                                }
+                                String unAck = respMsgService.getUnAck(msgNo);
+                                if (unAck == null) {
+                                    continue;
+                                }
+                                if (sessionId == null || sessionId.longValue() == Const.ProtocolConst.EMPTY_SESSION_ID.longValue()) {
+                                    respMsgService.saveOffline(toUserId, respMsg);
+                                    continue;
+                                }
+                                Session session = null;
+                                try {
+                                    session = sessionService.get(sessionId);
+                                } catch (Exception e) {
+                                    unAckRespMsgService.add(msgNo);
+                                    logger.error("get session by id error, re-wheel msg.");
+                                    return;
+                                }
+                                if (session == null) {
+                                    userStatusService.userOffline(toUserId);
+                                    respMsgService.saveOffline(toUserId, respMsg);
+                                    continue;
+                                }
+
+                                boolean incr = true;
+                                try {
+                                    RespPublisher.publish(sessionId, session.getServerId(), respMsg);
+                                } catch (Exception e) {
+                                    logger.error("publish msg error.", e);
+                                    incr = false;
+                                }
+                                unAckRespMsgService.add(msgNo);
+                                if (incr) {
+                                    try {
+                                        rm.hincrby(Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, msgNo, 1);
+                                    } catch (RedisConnException e) {
+                                    }
+                                }
+                                logger.info("resend msg " + unAck + " and re-wheel.");
+                            }
+                        }
+                    }
+                });
+            }
+
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+                    release();
+                    logger.info("release resource.");
+                }
+            }));
+
+
+        }
+    }
+
+    private void release() {
+        if (this.executor != null && !this.executor.isShutdown()) {
+            this.executor.shutdown();
+        }
+    }
+
+}
+
+class CounterThriftServerListener implements ChannelFutureListener {
+
+    private static final Logger logger = Logger.getLogger(CounterThriftServerListener.class);
+
+    @Override
+    public void operationComplete(ChannelFuture future) throws Exception {
+
+        if (future.isSuccess()) {
+            try {
+                new ImCounterServer().boot(PropsLoader.get(Const.PropsConst.IM_COUNTER_THRIFT_SERVER_PORT, 19000));
+            } catch (Exception e) {
+                logger.error("im counter server run error.", e);
+            }
+        }
 
     }
 

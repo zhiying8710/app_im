@@ -23,6 +23,7 @@ public class Session {
     private int status;
     private long pingTime;
     private long overtime = PropsLoader.get(Const.PropsConst.PING_OVERTIME, 10 * 1000);
+    private String serverId;
 
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -41,13 +42,14 @@ public class Session {
 //    }
 
     public Session(Long id, String userId, String token,
-            long pingTime, int status) {
+            long pingTime, int status, String serverId) {
         super();
         this.id = id;
         this.pingTime = pingTime;
         this.status = status;
         this.userId = userId;
         this.token = token;
+        this.serverId = serverId;
     }
 
     public Long getId() {
@@ -108,7 +110,15 @@ public class Session {
         }
     }
 
-    public boolean overtime() {
+    public String getServerId() {
+		return serverId;
+	}
+
+	public void setServerId(String serverId) {
+		this.serverId = serverId;
+	}
+
+	public boolean overtime() {
         return new Date().getTime() - getPingTime() > overtime;
     }
 
@@ -135,6 +145,7 @@ public class Session {
         serial.put("data", Const.CommonConst.GSON.toJson(data));
         serial.put("status", status);
         serial.put("pingTime", pingTime);
+        serial.put("serverId", serverId);
         return serial;
     }
 
@@ -152,13 +163,15 @@ public class Session {
         if (serial.get("pingTime") != null) {
             this.setPingTime(new Long(serial.get("pingTime")));
         }
+        this.setServerId(serial.get("serverId"));
     }
 
-    @Override
-    public String toString() {
-        return "Session [id=" + id + ", userId=" + userId + ", token=" + token
-                + ", data=" + data + ", status=" + status + ", pingTime="
-                + pingTime + "]";
-    }
+	@Override
+	public String toString() {
+		return "Session [id=" + id + ", userId=" + userId + ", token=" + token
+				+ ", data=" + data + ", status=" + status + ", pingTime="
+				+ pingTime + ", overtime=" + overtime + ", serverId="
+				+ serverId + ", lock=" + lock + "]";
+	}
 
 }

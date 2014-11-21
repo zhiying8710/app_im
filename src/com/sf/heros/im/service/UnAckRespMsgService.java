@@ -10,9 +10,9 @@ public interface UnAckRespMsgService {
 
     public boolean pushToQueue(Resp unAckMsg);
 
-    public void add(String unAckMsgId);
+    public void add(String msgNo);
 
-    public void remove(String unAckMsgId);
+    public void remove(String msgNo);
 
     public void release();
 

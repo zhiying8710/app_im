@@ -6,14 +6,18 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.bean.msg.Resp;
+import com.sf.heros.im.common.redis.RedisCmdPair;
 import com.sf.heros.im.common.redis.RedisConnException;
 import com.sf.heros.im.common.redis.RedisManagerV2;
 import com.sf.heros.im.service.RespMsgService;
 
 public class RedisRespMsgServiceImpl implements RespMsgService {
 
+	private static final String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
     private RedisManagerV2 rm;
+
 
     public RedisRespMsgServiceImpl() {
         this.rm = RedisManagerV2.getInstance();
@@ -33,7 +37,7 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     }
 
     private String getRespMsgUnAckKey() {
-        return Const.RedisConst.RESP_MSG_UNACK_KEY;
+        return Const.RedisConst.RESP_MSG_UNACK_KEY + Const.CommonConst.KEY_SEP + serverId;
     }
 
     @Override
@@ -45,7 +49,8 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
 
     @Override
     public void saveOffline(String userId, Resp respMsg) {
-        rm.rpush(getUserOfflineMsgKey(userId), respMsg.toJson());
+    	rm.hset(getUserOfflineMsgKey(userId), respMsg.getMsgNo(), respMsg.toJson());
+//        rm.rpush(getUserOfflineMsgKey(userId), respMsg.toJson());
     }
 
     private String getUserOfflineMsgKey(String userId) {
@@ -57,10 +62,11 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
 
         try {
             String key = getUserOfflineMsgKey(userId);
-            List<String> offlines = rm.lAll(key);
+            List<String> offlines = rm.hvals(key);
+//            List<String> offlines = rm.lAll(key);
             rm.del(key);
             return offlines;
-        } catch (RedisConnException e) {
+        } catch (Exception e) {
             return null;
         }
 
@@ -90,7 +96,9 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     public List<Resp> getOfflineMsgs(String userId) {
 
         try {
-            List<String> msgs = rm.lAll(getUserOfflineMsgKey(userId));
+        	String key = getUserOfflineMsgKey(userId);
+			List<String> msgs = rm.hvals(key);
+//            List<String> msgs = rm.lAll(key);
             if (msgs == null || msgs.isEmpty()) {
                 return null;
             }
@@ -98,11 +106,28 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
             for (String msg : msgs) {
                 offlines.add(Resp.fromJson(msg, Resp.class));
             }
+            rm.del(key);
             return offlines;
-        } catch (RedisConnException e) {
+        } catch (Exception e) {
             return null;
         }
 
     }
 
+	@Override
+	public void delOffline(String userId, String msgNo) {
+		List<RedisCmdPair> cmdPairs = new ArrayList<RedisCmdPair>();
+		cmdPairs.add(new RedisCmdPair("hdel", new Object[]{getRespMsgUnAckKey(), new String[]{msgNo}}));
+		cmdPairs.add(new RedisCmdPair("hdel", new Object[]{Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, new String[]{msgNo}}));
+		rm.oMulti(cmdPairs);
+	}
+
+	@Override
+	public void clearUnAck() {
+
+		rm.del(getRespMsgUnAckKey());
+
+	}
+
 }
+
