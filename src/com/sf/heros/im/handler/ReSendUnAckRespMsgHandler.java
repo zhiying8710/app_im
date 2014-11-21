@@ -21,6 +21,12 @@ import com.sf.heros.im.service.UnAckRespMsgService;
 import com.sf.heros.im.service.UserStatusService;
 
 @Sharable
+@Deprecated
+/**
+ * Deprecated, use {@link AppMain#ReSendUnAckRespLinstener} instead.
+ * @author bingege
+ *
+ */
 public class ReSendUnAckRespMsgHandler extends CommonInboundHandler {
 
     private static final Logger logger = Logger.getLogger(ReSendUnAckRespMsgHandler.class);

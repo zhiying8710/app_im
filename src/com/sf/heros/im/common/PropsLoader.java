@@ -24,6 +24,10 @@ public class PropsLoader {
         }
     }
 
+    public static String get(String key) {
+    	return props.getProperty(key);
+    }
+
     public static String get(String key, String defaultVal) {
         return props.getProperty(key, defaultVal);
     }
@@ -34,6 +38,10 @@ public class PropsLoader {
         } catch (Exception e) {
             return defaultVal;
         }
+    }
+
+    public static void set(String key, String val) {
+    	props.put(key, val);
     }
 
 }

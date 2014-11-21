@@ -57,13 +57,13 @@ public class RedisUnAckRespMsgServiceImpl implements
     }
 
     @Override
-    public void add(String unAckMsgId) {
-        unAckRespMsgTimingWheel.add(unAckMsgId);
+    public void add(String msgNo) {
+        unAckRespMsgTimingWheel.add(msgNo);
     }
 
     @Override
-    public void remove(String unAckMsgId) {
-        unAckRespMsgTimingWheel.remove(unAckMsgId);
+    public void remove(String msgNo) {
+        unAckRespMsgTimingWheel.remove(msgNo);
     }
 
     @Override

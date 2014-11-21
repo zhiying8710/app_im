@@ -1,7 +1,6 @@
 package com.sf.heros.im.common.bean.msg;
 
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,18 +14,13 @@ public class Resp extends ReqResp implements Serializable {
     private int type;
     private Long sid;
     private Map<String, Object> data;
+    private static final String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
 
     protected Resp(Long sid, boolean needMsgNo) {
         super();
         this.sid = sid;
         if (needMsgNo) {
-            String msgNo = null;
-            try {
-                msgNo = ImUtils.getUniqueId(sid + PropsLoader.get(Const.PropsConst.SERVER_NAME, InetAddress.getLocalHost().getHostName()));
-            } catch (Exception e) {
-                msgNo = ImUtils.getUniqueId(sid.toString());
-            }
-            setToData(Const.RespConst.DATA_KEY_MSG_NO, msgNo);
+            setToData(Const.RespConst.DATA_KEY_MSG_NO, ImUtils.getUniqueId(sid + serverId));
         }
     }
 

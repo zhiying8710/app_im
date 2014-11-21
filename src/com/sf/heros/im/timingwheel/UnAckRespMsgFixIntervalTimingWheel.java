@@ -110,6 +110,7 @@ public class UnAckRespMsgFixIntervalTimingWheel {
         this.ticksPerWheel = ticksPerWheel + 1;
         this.expirationExecutor = Executors.newCachedThreadPool();
         for (int i = 0; i < this.ticksPerWheel; i++) {
+        	slotKeyService.clear(i);
             wheel.add(new Slot(i, slotKeyService.geneKey(i)){
 
                 private RedisManagerV2 rm = RedisManagerV2.getInstance();

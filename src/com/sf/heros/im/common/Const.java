@@ -146,13 +146,15 @@ public class Const {
         public static final String SERVER_SOCKET_BACKLOG_COUNT = "im.server.socket.backlog.count";
         public static final String BOSS_GROUP_THREADS = "im.server.boss.threads";
 
-        public static final String SERVER_NAME = "im.server.name";
+//        public static final String SERVER_NAME = "im.server.name";
+        public static final String SERVER_ID = "im.server.id";
 
         public static final String CHANNEL_ID_THRIFT_HOST = "im.channel.id.thrift.host";
         public static final String CHANNEL_ID_THRIFT_PORT = "im.channel.id.thrift.port";
         public static final String CHANNEL_ID_THRIFT_USRAGENT = "im.channel.id.thrift.usragent";
         public static final String IM_COUNTER_THRIFT_SERVER_PORT = "im.counter.thrift.server.port";
         public static final String UNACKMSG_RESEND_COUNT = "im.unackmsg.resend.count";
+		public static final String SERVER_UNIQUE_ID = "im.server.unique.id";
 
     }
 

@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import com.sf.heros.im.channel.util.ClientChannelIdUtil;
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.RespPublisher;
 import com.sf.heros.im.common.bean.AuthCheck;
 import com.sf.heros.im.common.bean.Session;
@@ -32,6 +33,7 @@ public class LoginController extends CommonController {
 
     private static final Logger logger = Logger.getLogger(CommonController.class);
 
+    private static final String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
     private AuthService authService;
     private UserStatusService userStatusService;
     private SessionService sessionService;
@@ -78,7 +80,7 @@ public class LoginController extends CommonController {
         Resp loginRespMsg = new LoginResp(sessionId);
 
         if (!checkRes.isOnline()) {
-            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE);
+            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE, serverId);
             sessionService.add(sessionId, session);
             userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
             writeAndFlush(ctx.channel(), loginRespMsg);
@@ -120,7 +122,7 @@ public class LoginController extends CommonController {
                 RespPublisher.publish(kSessionId, new KickedResp(ClientChannelIdUtil.getId(ctx)));
                 logger.info("user(" + userId + ") is login in more than onece, kick the first login.");
             }
-            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE);
+            Session session = new Session(sessionId, userId, token, new Date().getTime(), Session.STATUS_ONLINE, serverId);
             sessionService.add(sessionId, session);
             userStatusService.userOnline(userId, token, sessionId, new Date().getTime());
             writeAndFlush(ctx.channel(), loginRespMsg);

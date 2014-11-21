@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import com.sf.heros.im.common.Const;
+import com.sf.heros.im.common.PropsLoader;
 import com.sf.heros.im.common.bean.msg.Resp;
 import com.sf.heros.im.common.redis.RedisCmdPair;
 import com.sf.heros.im.common.redis.RedisConnException;
@@ -14,7 +15,9 @@ import com.sf.heros.im.service.RespMsgService;
 
 public class RedisRespMsgServiceImpl implements RespMsgService {
 
+	private static final String serverId = PropsLoader.get(Const.PropsConst.SERVER_ID);
     private RedisManagerV2 rm;
+
 
     public RedisRespMsgServiceImpl() {
         this.rm = RedisManagerV2.getInstance();
@@ -34,7 +37,7 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
     }
 
     private String getRespMsgUnAckKey() {
-        return Const.RedisConst.RESP_MSG_UNACK_KEY;
+        return Const.RedisConst.RESP_MSG_UNACK_KEY + Const.CommonConst.KEY_SEP + serverId;
     }
 
     @Override
@@ -114,9 +117,16 @@ public class RedisRespMsgServiceImpl implements RespMsgService {
 	@Override
 	public void delOffline(String userId, String msgNo) {
 		List<RedisCmdPair> cmdPairs = new ArrayList<RedisCmdPair>();
-		cmdPairs.add(new RedisCmdPair("hdel", new Object[]{getRespMsgUnAckKey(), msgNo}));
-		cmdPairs.add(new RedisCmdPair("hdel", new Object[]{Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, msgNo}));
+		cmdPairs.add(new RedisCmdPair("hdel", new Object[]{getRespMsgUnAckKey(), new String[]{msgNo}}));
+		cmdPairs.add(new RedisCmdPair("hdel", new Object[]{Const.RedisConst.UNACKMSG_RESEND_COUNT_KEY, new String[]{msgNo}}));
 		rm.oMulti(cmdPairs);
+	}
+
+	@Override
+	public void clearUnAck() {
+
+		rm.del(getRespMsgUnAckKey());
+
 	}
 
 }
