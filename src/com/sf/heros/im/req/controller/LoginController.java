@@ -89,7 +89,7 @@ public class LoginController extends CommonController {
                     List<String> perOfflineMsgs = new ArrayList<String>();
                     for (int i = 0; i < page; i++) {
                         if (k == Const.CommonConst.OFFLINE_MSG_SEND_PER_SIZE) {
-                            Resp respMsg = new OfflineMsgsResp(ClientChannelIdUtil.getId(ctx), perOfflineMsgs, Const.CommonConst.SERVER_USER_ID + Const.CommonConst.KEY_SEP + new Date().getTime(), userId);
+                            Resp respMsg = new OfflineMsgsResp(ClientChannelIdUtil.getId(ctx), perOfflineMsgs, Const.CommonConst.SERVER_USER_ID, userId);
                             writeAndFlush(ctx.channel(), respMsg);
 
                             String msgNo = respMsg.getMsgNo();
