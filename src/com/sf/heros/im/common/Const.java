@@ -157,8 +157,9 @@ public class Const {
 
         public static final String MQ_HOST = "im.mq.host";
         public static final String MQ_PORT = "im.mq.port";
-		public static final String MQ_USERNAME = "im.mq.username";
-		public static final String MQ_PASSWORD = "im.mq.password";
+        public static final String MQ_USERNAME = "im.mq.username";
+        public static final String MQ_PASSWORD = "im.mq.password";
+        public static final String RESP_MQ_CONSUMER_THS = "im.mq.resp.consumer.ths";
 
     }
 

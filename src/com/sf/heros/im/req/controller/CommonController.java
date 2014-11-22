@@ -18,6 +18,7 @@ import com.sf.heros.im.common.bean.msg.AskLoginResp;
 import com.sf.heros.im.common.bean.msg.KickedResp;
 import com.sf.heros.im.common.bean.msg.Req;
 import com.sf.heros.im.common.bean.msg.Resp;
+import com.sf.heros.im.server.ShutdownHookUtils;
 import com.sf.heros.im.service.SessionService;
 import com.sf.heros.im.service.UserStatusService;
 
@@ -32,18 +33,7 @@ public abstract class CommonController {
     private UserStatusService userStatusService;
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                Collection<CommonController> controllers = CONTROLLERS.values();
-                for (CommonController controller : controllers) {
-                    if (controller != null) {
-                        controller.release();
-                    }
-                }
-            }
-        }));
+        ShutdownHookUtils.shutdownControllers();
     }
 
     public CommonController(SessionService sessionService, UserStatusService userStatusService) {
@@ -131,6 +121,10 @@ public abstract class CommonController {
         }
         Resp ackMsg = new AckResp(sessionId, msgNo, sessionService.get(sessionId).getUserId(), to);
         RespPublisher.publish(sessionId, serverId, ackMsg);
+    }
+
+    public static Collection<CommonController> getAll() {
+        return CONTROLLERS.values();
     }
 
 }

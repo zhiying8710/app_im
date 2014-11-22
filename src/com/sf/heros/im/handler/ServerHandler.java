@@ -6,9 +6,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-
 import org.apache.log4j.Logger;
 
 import com.sf.heros.im.channel.ClientChannel;
@@ -51,22 +48,6 @@ public class ServerHandler extends CommonInboundHandler {
         ChatController chatController = new ChatController(userStatusService, sessionService, respMsgService, unAckRespMsgService, userInfoService);
         CommonController.add(Const.ReqConst.TYPE_STRING_MSG, chatController);
         CommonController.add(Const.ReqConst.TYPE_VOICE_MSG, chatController);
-
-        final ScheduledExecutorService counterExecutor = Executors.newSingleThreadScheduledExecutor();
-//        counterExecutor.scheduleAtFixedRate(new Runnable() {
-//
-//            @Override
-//            public void run() {
-//                logger.info("current connections count : " + Counter.getConns() + ", current login user count : " + Counter.getOnlines());
-//            }
-//        }, 1, 10, TimeUnit.SECONDS);
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                counterExecutor.shutdownNow();
-            }
-        }));
     }
 
     @Override

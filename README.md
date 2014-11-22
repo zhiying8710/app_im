@@ -45,6 +45,7 @@ netty 实现的 tcp/udt 协议的聊天/推送服务器端, 消息采用 json �
 <p>im.unackmsg.resend.count=3 // 未收到回执的消息的重发次数</p>
 <p>im.mq.host=127.0.0.1 // mq 的 ip</p>
 <p>im.mq.port=5672 // mq 的端口</p>
+<p>im.mq.resp.consumer.ths=5 // mq 的resp消息消费者的线程数</p>
 <br/>
 
 <h2>消息类型</h2>
